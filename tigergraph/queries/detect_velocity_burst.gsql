@@ -1,0 +1,21 @@
+// Cards whose densest window of `window_seconds` holds >= min_txns transactions.
+CREATE OR REPLACE QUERY detect_velocity_burst(INT window_seconds = 3600, INT min_txns = 6) FOR GRAPH HHGOA_IEEE {
+  TYPEDEF TUPLE<STRING card_id, INT txn_count, INT window_start, INT window_end> Burst;
+  ListAccum<INT> @ts;
+  SumAccum<INT> @window_count;
+  MaxAccum<INT> @best;
+  MapAccum<STRING, Burst> @@bursts;
+
+  T = {Transaction.*};
+  C = SELECT c FROM T:t -(PAID_WITH)- Card:c ACCUM c.@ts += t.ts;
+  // For every transaction, count same-card transactions in the trailing window.
+  T = SELECT t FROM T:t -(PAID_WITH)- Card:c
+      ACCUM FOREACH x IN c.@ts DO
+              IF x <= t.ts AND x >= t.ts - window_seconds THEN t.@window_count += 1 END
+            END;
+  C = SELECT c FROM T:t -(PAID_WITH)- Card:c ACCUM c.@best += t.@window_count;
+  X = SELECT t FROM T:t -(PAID_WITH)- Card:c
+      WHERE c.@best >= min_txns AND t.@window_count == c.@best
+      ACCUM @@bursts += (c.card_id -> Burst(c.card_id, c.@best, t.ts - window_seconds, t.ts));
+  PRINT @@bursts AS bursts;
+}

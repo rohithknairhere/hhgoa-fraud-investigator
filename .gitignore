@@ -1,0 +1,14 @@
+backend/.venv/
+**/__pycache__/
+.pytest_cache/
+backend/.env
+frontend/node_modules/
+frontend/.next/
+frontend/data/benchmarks/
+frontend/.env*
+!frontend/.env.example
+*.tsbuildinfo
+dataset/
+backend/.store/
+demo/build/
+.claude/

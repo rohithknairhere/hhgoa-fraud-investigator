@@ -1,0 +1,66 @@
+device_id,device_type,device_info
+DEV-20001,desktop,Windows
+DEV-20002,desktop,Windows
+DEV-20003,desktop,Windows
+DEV-20004,desktop,Windows
+DEV-20005,desktop,Windows
+DEV-20006,desktop,Windows
+DEV-20007,desktop,Windows
+DEV-20008,desktop,Windows
+DEV-20009,desktop,Windows
+DEV-20010,desktop,Windows
+DEV-20011,desktop,Windows
+DEV-20012,desktop,Windows
+DEV-20013,desktop,Windows
+DEV-20014,desktop,Windows
+DEV-20015,desktop,Windows
+DEV-20016,desktop,Windows
+DEV-20017,desktop,Windows
+DEV-20018,desktop,Windows
+DEV-20019,desktop,Windows
+DEV-20020,desktop,Windows
+DEV-20021,desktop,Windows
+DEV-20022,desktop,Windows
+DEV-20023,desktop,Windows
+DEV-20024,desktop,Windows
+DEV-20025,desktop,Windows
+DEV-20026,desktop,Windows
+DEV-20027,desktop,Windows
+DEV-20028,desktop,Windows
+DEV-20029,desktop,Windows
+DEV-20030,desktop,Windows
+DEV-20031,desktop,Windows
+DEV-20032,desktop,Windows
+DEV-20033,desktop,Windows
+DEV-20034,mobile,SM-G960U
+DEV-20035,mobile,iOS 17
+DEV-20036,desktop,Linux x86_64
+DEV-20037,mobile,iOS 17
+DEV-20038,mobile,iOS 16
+DEV-20039,mobile,iOS 17
+DEV-20040,desktop,MacOS
+DEV-20041,desktop,Windows
+DEV-20042,desktop,Windows
+DEV-20043,mobile,iOS 17
+DEV-20044,mobile,iOS 17
+DEV-20045,desktop,Windows
+DEV-20046,mobile,Redmi Note 0
+DEV-20047,mobile,Redmi Note 1
+DEV-20048,mobile,Redmi Note 2
+DEV-20049,mobile,Redmi Note 3
+DEV-20050,mobile,Redmi Note 4
+DEV-20051,mobile,Redmi Note 5
+DEV-20052,mobile,Redmi Note 6
+DEV-20053,mobile,Redmi Note 7
+DEV-20054,mobile,Redmi Note 9
+DEV-20055,mobile,iOS 17
+DEV-20056,mobile,iOS 17
+DEV-20057,desktop,Windows
+DEV-20058,mobile,Android Emulator x86
+DEV-20059,mobile,iOS 17
+DEV-20060,mobile,SM-A515F
+DEV-20061,desktop,Windows
+DEV-20062,mobile,iOS 17
+DEV-20063,desktop,Windows
+DEV-20064,mobile,SM-S911B
+DEV-20065,mobile,iOS 17

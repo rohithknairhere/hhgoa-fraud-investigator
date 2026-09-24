@@ -1,0 +1,51 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  color-scheme: light;
+  --font-sans: "Inter", "Segoe UI", ui-sans-serif, system-ui, -apple-system, Roboto, "Helvetica Neue", Arial, sans-serif;
+  --font-mono: "JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+}
+
+html {
+  background-color: #e0e5ec;
+}
+
+body {
+  @apply bg-surface text-ink antialiased;
+  font-family: var(--font-sans), system-ui, sans-serif;
+}
+
+@layer components {
+  /* Extruded surface: paired light (top-left) and dark (bottom-right) shadows. */
+  .neu {
+    @apply rounded-3xl bg-surface shadow-neu;
+  }
+  .neu-sm {
+    @apply rounded-2xl bg-surface shadow-neu-sm;
+  }
+  /* Pressed / recessed surface for inputs, tracks and active states. */
+  .neu-inset {
+    @apply rounded-2xl bg-surface shadow-neu-inset;
+  }
+  .neu-button {
+    @apply inline-flex items-center justify-center gap-2 rounded-2xl bg-surface px-5 py-3 font-semibold text-ink shadow-neu transition-shadow duration-150 hover:shadow-neu-lg active:shadow-neu-inset disabled:cursor-not-allowed disabled:opacity-70;
+  }
+  .neu-input {
+    @apply w-full rounded-xl bg-surface px-4 py-3 text-ink shadow-neu-inset placeholder:text-ink-muted focus:outline-none focus-visible:ring-2 focus-visible:ring-accent;
+  }
+  .focus-ring {
+    @apply focus:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 focus-visible:ring-offset-surface;
+  }
+  .eyebrow {
+    @apply text-xs font-semibold uppercase tracking-wider text-ink-muted;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  * {
+    transition: none !important;
+    animation: none !important;
+  }
+}

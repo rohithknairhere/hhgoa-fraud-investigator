@@ -1,0 +1,52 @@
+// Point-in-time context for one transaction: its entities plus graph statistics
+// computed only over transactions at or before the alerted transaction.
+CREATE OR REPLACE QUERY get_transaction_context(VERTEX<Transaction> txn) FOR GRAPH HHGOA_IEEE {
+  MaxAccum<INT> @@t0;
+  SetAccum<VERTEX<Card>> @@dev_cards, @@ip_cards, @@ip_cards_1h;
+  SetAccum<VERTEX<Customer>> @@dev_custs, @@ip_custs;
+  SetAccum<STRING> @@countries_1h;
+  SetAccum<VERTEX<Transaction>> @@fraud_neighbors;
+  SumAccum<INT> @@card_1h, @@cust_24h, @@near;
+  SumAccum<DOUBLE> @@card_amt_1h, @@cust_amt_24h;
+  INT t0;
+
+  Tx = {txn};
+  Tx = SELECT s FROM Tx:s POST-ACCUM @@t0 += s.ts;
+  t0 = @@t0;
+  Cd = SELECT c FROM Tx:s -(PAID_WITH)- Card:c;
+  Dv = SELECT d FROM Tx:s -(USED_DEVICE)- Device:d;
+  Ip = SELECT i FROM Tx:s -(FROM_IP)- IP:i;
+  Cu = SELECT u FROM Tx:s -(PLACED_BY)- Customer:u;
+
+  DevT = SELECT t FROM Dv:d -(USED_DEVICE)- Transaction:t WHERE t.ts <= t0;
+  X = SELECT c FROM DevT:t -(PAID_WITH)- Card:c ACCUM @@dev_cards += c;
+  X = SELECT u FROM DevT:t -(PLACED_BY)- Customer:u ACCUM @@dev_custs += u;
+
+  IpT = SELECT t FROM Ip:i -(FROM_IP)- Transaction:t WHERE t.ts <= t0;
+  X = SELECT c FROM IpT:t -(PAID_WITH)- Card:c
+      ACCUM @@ip_cards += c, IF t.ts >= t0 - 3600 THEN @@ip_cards_1h += c END;
+  X = SELECT u FROM IpT:t -(PLACED_BY)- Customer:u ACCUM @@ip_custs += u;
+
+  CardT = SELECT t FROM Cd:c -(PAID_WITH)- Transaction:t
+          WHERE t.ts <= t0 AND t.ts >= t0 - 3600
+          ACCUM @@card_1h += 1, @@card_amt_1h += t.amount;
+  X = SELECT i FROM CardT:t -(FROM_IP)- IP:i ACCUM @@countries_1h += i.country;
+
+  CustT = SELECT t FROM Cu:u -(PLACED_BY)- Transaction:t
+          WHERE t.ts <= t0 AND t.ts >= t0 - 86400
+          ACCUM @@cust_24h += 1, @@cust_amt_24h += t.amount,
+                IF t.amount >= 9000 AND t.amount < 10000 THEN @@near += 1 END;
+
+  Hubs = Cd UNION Dv UNION Ip;
+  X = SELECT t FROM Hubs:h -((PAID_WITH|USED_DEVICE|FROM_IP))- Transaction:t
+      WHERE t.ts <= t0 AND t != txn AND t.is_fraud == 1
+      ACCUM @@fraud_neighbors += t;
+
+  PRINT Tx AS transaction, Cd AS card, Dv AS device, Ip AS ip, Cu AS customer;
+  PRINT @@dev_cards.size() AS device_distinct_cards, @@dev_custs.size() AS device_distinct_customers,
+        @@dev_cards AS device_cards, @@ip_cards.size() AS ip_distinct_cards,
+        @@ip_custs.size() AS ip_distinct_customers, @@ip_cards_1h.size() AS ip_cards_1h,
+        @@card_1h AS card_txn_count_1h, @@card_amt_1h AS card_amount_1h, @@countries_1h AS card_countries_1h,
+        @@cust_24h AS customer_txn_count_24h, @@cust_amt_24h AS customer_amount_24h,
+        @@near AS near_threshold_count_24h, @@fraud_neighbors AS fraud_labeled_neighbor_txns;
+}

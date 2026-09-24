@@ -1,0 +1,146 @@
+{
+  "case_id": "HHG-019",
+  "case": {
+    "status": "closed_fraud",
+    "verdict": "fraud",
+    "fraud_probability": 0.95,
+    "pattern": "card_not_present_new_device",
+    "pattern_description": "",
+    "affected_txn_ids": [
+      "3503878"
+    ],
+    "first_suspicious_txn_id": "3503878",
+    "connected_card_ids": [
+      "C06224-K2",
+      "C11309-K1"
+    ],
+    "connected_device_profiles": [
+      "Windows | other | chrome 61.0 | 1280x720"
+    ],
+    "exposure_usd": 99.92,
+    "evidence": [
+      {
+        "claim": "Online purchase from device profile 'Windows | other | chrome 61.0 | 1280x720', identity record id_15=New; never seen on this card before",
+        "source": "graph",
+        "ref": "query:card_history(card_id=C07987-K2)",
+        "entity_ids": [
+          "3503878"
+        ]
+      },
+      {
+        "claim": "$99.92 vs this card's 95th percentile of $250.00 for online purchases over 57 prior transactions",
+        "source": "graph",
+        "ref": "query:card_history(card_id=C07987-K2)",
+        "entity_ids": [
+          "3503878"
+        ]
+      },
+      {
+        "claim": "Classifier trained on the Jul-Oct closed cases (Vesta V/C/D/M features, unnamed) scores the flagged transaction 0.60; bank risk score was 0.90",
+        "source": "graph",
+        "ref": "model:closed_case_memory_classifier",
+        "entity_ids": [
+          "3503878"
+        ]
+      },
+      {
+        "claim": "Retrieved closed cases: CC-5026 (confirmed_fraud, out_of_region_use, $309.86); CC-2860 (confirmed_fraud, card_not_present_fraud, $149.92); CC-0071 (confirmed_fraud, card_not_present_new_device, $47.19); CC-0110 (confirmed_fraud, card_not_present_new_device, $83.79); CC-0123 (confirmed_fraud, card_not_present_new_device, $200.02)",
+        "source": "graph",
+        "ref": "query:similar_closed_cases",
+        "entity_ids": [
+          "CC-5026",
+          "CC-2860",
+          "CC-0071",
+          "CC-0110",
+          "CC-0123"
+        ]
+      },
+      {
+        "claim": "Customer denies the transaction and still holds the card (assumed: device/amount anomalies and closed-case memory point to fraud)",
+        "source": "customer",
+        "ref": "evidence_request:1",
+        "entity_ids": []
+      }
+    ],
+    "similar_prior_cases": [
+      "CC-5026",
+      "CC-2860",
+      "CC-0071",
+      "CC-0110",
+      "CC-0123"
+    ],
+    "summary": "Risk score on 3503878 ($99.92, online). Initial fraud probability 0.73; after the customer validation it is 0.95. Verdict fraud, pattern card_not_present_new_device, exposure $99.92 across 1 transaction(s). 2 other cards share the device profile and are placed under monitoring.",
+    "written_to_graph": false,
+    "graph_case_id": ""
+  },
+  "evidence_requests": [
+    {
+      "type": "customer_validation",
+      "asked_after_step": 4,
+      "assumed_response": "Customer denies the transaction and still holds the card (assumed: device/amount anomalies and closed-case memory point to fraud)"
+    }
+  ],
+  "next_best_actions": {
+    "initial": [
+      {
+        "action": "CREATE_CASE",
+        "route": "auto",
+        "reason": "3a: a case is opened whenever evidence is requested"
+      },
+      {
+        "action": "VERIFY_WITH_CUSTOMER",
+        "route": "auto",
+        "reason": "R1: probability 0.73 rests on weak or single signals; verify before any block"
+      },
+      {
+        "action": "MONITOR_CARD",
+        "route": "auto",
+        "reason": "Raise monitoring while verification is pending"
+      }
+    ],
+    "final": [
+      {
+        "action": "BLOCK_CARD",
+        "route": "L1",
+        "reason": "R2: customer denied; exposure $99.92 at or under $2,500"
+      },
+      {
+        "action": "CREATE_CASE",
+        "route": "auto",
+        "reason": "R2/3a"
+      },
+      {
+        "action": "FILE_REPORT",
+        "route": "L2",
+        "reason": "R6: shared device profile links other cards"
+      },
+      {
+        "action": "MONITOR_CONNECTED_CARDS",
+        "route": "auto",
+        "reason": "R6: cards sharing the device profile"
+      }
+    ],
+    "what_changed": "Assumed response (Customer denies the transaction and still holds the card) moved fraud probability from 0.73 to 0.95, so the recommendation changed from verification to the actions the policy requires."
+  },
+  "sar": {
+    "file": true,
+    "reason": "R6: shared device profile links other cards",
+    "narrative": "Between 2016-12-01 17:28 and 2016-12-01 17:28, card C07987-K2 held by customer C07987 was used for 1 transaction(s) totalling $99.92: 3503878 ($99.92, online). The investigation was opened on 2016-12-01 after a risk score: \"Real-time model scored transaction 3503878 ($99.92, online) at 0.90. Review and decide.\" The purchases were made online from device profile(s) Windows | other | chrome 61.0 | 1280x720. The cardholder, when contacted, stated they did not make the purchases and still holds the card (response simulated per policy section 5). The same device profile was used on 2 other cards in the period, including C06224-K2, C11309-K1, indicating a common actor across cardholders. The activity matches previously confirmed bank cases CC-5026, CC-2860, CC-0071. This is suspicious because shared device profile links other cards, and the activity is inconsistent with the cardholder's history. Total suspicious amount: $99.92. The card is recommended for blocking and reissue; connected cards are placed under monitoring.",
+    "subjects": [
+      "C07987",
+      "C07987-K2",
+      "C06224-K2",
+      "C11309-K1",
+      "Windows | other | chrome 61.0 | 1280x720"
+    ],
+    "total_amount_usd": 99.92,
+    "activity_dates": [
+      "2016-12-01",
+      "2016-12-01"
+    ]
+  },
+  "stop_reason": "The verification response settled the question (policy 6).",
+  "tool_calls": 7,
+  "tokens": 0,
+  "latency_s": 0.1
+}

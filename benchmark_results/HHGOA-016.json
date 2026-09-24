@@ -1,0 +1,993 @@
+{
+  "case_id": "HHGOA-016",
+  "title": "Established customer behind a corporate VPN",
+  "typology": "benign_proxy",
+  "generated_at": "2026-09-24T13:01:00+00:00",
+  "graph_backend": "mock",
+  "planner": "deterministic",
+  "alert": {
+    "case_id": "HHGOA-016",
+    "transaction_id": "T3100525",
+    "rule": "PROXY_IP",
+    "risk_score": 0.45,
+    "source": "hhgoa-risk-engine"
+  },
+  "investigation_record": {
+    "transaction_id": "T3100525",
+    "customer_id": "CUST-30071",
+    "pattern_tags": [],
+    "evidence": [
+      {
+        "evidence_id": "EV-01",
+        "label": "context",
+        "source": "tigergraph-mcp",
+        "tool": "get_transaction_context",
+        "mcp_call_id": "mcp-106",
+        "arguments": {
+          "transaction_id": "T3100525"
+        },
+        "latency_ms": 1.32,
+        "origin": "playbook",
+        "summary": "Txn T3100525 $95.00; device cards=1, IP cards=1, card 1h velocity=1, near-threshold 24h=0",
+        "graph_elements": [
+          "T3100525",
+          "CARD-10072",
+          "DEV-20061",
+          "IP-40056",
+          "CUST-30071"
+        ]
+      },
+      {
+        "evidence_id": "EV-02",
+        "label": "history",
+        "source": "tigergraph-mcp",
+        "tool": "get_customer_history",
+        "mcp_call_id": "mcp-107",
+        "arguments": {
+          "customer_id": "CUST-30071",
+          "as_of_ts": 30000000
+        },
+        "latency_ms": 1.13,
+        "origin": "playbook",
+        "summary": "40 baseline txns, avg $69.59, 0 chargebacks, 1 known devices, countries ['US']",
+        "graph_elements": [
+          "CUST-30071",
+          "DEV-20061"
+        ]
+      },
+      {
+        "evidence_id": "EV-03",
+        "label": "related_device",
+        "source": "tigergraph-mcp",
+        "tool": "find_related_entities",
+        "mcp_call_id": "mcp-108",
+        "arguments": {
+          "entity_id": "DEV-20061",
+          "hops": 2,
+          "as_of_ts": 30000000
+        },
+        "latency_ms": 1.02,
+        "origin": "playbook",
+        "summary": "2-hop neighbourhood of DEV-20061: Card=1, Customer=1, IP=2, Transaction=41; fraud txns=0, confirmed cases=0",
+        "graph_elements": [
+          "DEV-20061"
+        ]
+      },
+      {
+        "evidence_id": "EV-04",
+        "label": "related_ip",
+        "source": "tigergraph-mcp",
+        "tool": "find_related_entities",
+        "mcp_call_id": "mcp-109",
+        "arguments": {
+          "entity_id": "IP-40056",
+          "hops": 2,
+          "as_of_ts": 30000000
+        },
+        "latency_ms": 0.94,
+        "origin": "playbook",
+        "summary": "2-hop neighbourhood of IP-40056: Card=1, Customer=1, Device=1, IP=1, Transaction=41; fraud txns=0, confirmed cases=0",
+        "graph_elements": [
+          "IP-40056"
+        ]
+      },
+      {
+        "evidence_id": "EV-05",
+        "label": "related_customer",
+        "source": "tigergraph-mcp",
+        "tool": "find_related_entities",
+        "mcp_call_id": "mcp-110",
+        "arguments": {
+          "entity_id": "CUST-30071",
+          "hops": 2,
+          "as_of_ts": 30000000
+        },
+        "latency_ms": 1.16,
+        "origin": "playbook",
+        "summary": "2-hop neighbourhood of CUST-30071: Card=1, Device=1, IP=2, Transaction=41; fraud txns=0, confirmed cases=0",
+        "graph_elements": [
+          "CUST-30071"
+        ]
+      },
+      {
+        "evidence_id": "EV-06",
+        "label": "similar",
+        "source": "tigergraph-mcp",
+        "tool": "find_similar_cases",
+        "mcp_call_id": "mcp-111",
+        "arguments": {
+          "transaction_id": "T3100525",
+          "pattern_tags": [],
+          "k": 5
+        },
+        "latency_ms": 0.93,
+        "origin": "deterministic",
+        "summary": "0 similar closed cases for tags []",
+        "graph_elements": []
+      },
+      {
+        "evidence_id": "EV-07",
+        "label": "followup:step_up_auth",
+        "source": "step_up_auth",
+        "tool": null,
+        "summary": "Cardholder completed app-based step-up authentication (biometric) and confirmed the purchase.",
+        "graph_elements": [],
+        "category": "identity_verification",
+        "round": 1
+      }
+    ],
+    "signals": [
+      {
+        "name": "proxy_ip",
+        "weight": 0.8,
+        "strength": 1.0,
+        "contribution": 0.8,
+        "direction": "fraud",
+        "needs_verification": "identity_verification",
+        "pattern_tag": null,
+        "description": "Transaction routed through proxy/hosting ASN AS13335 (US).",
+        "evidence_ids": [
+          "EV-01"
+        ],
+        "graph_elements": [
+          "IP-40056"
+        ]
+      },
+      {
+        "name": "known_device",
+        "weight": -0.9,
+        "strength": 1.0,
+        "contribution": -0.9,
+        "direction": "legitimate",
+        "needs_verification": null,
+        "pattern_tag": null,
+        "description": "Device DEV-20061 appears in the customer's baseline history.",
+        "evidence_ids": [
+          "EV-02"
+        ],
+        "graph_elements": [
+          "DEV-20061",
+          "CUST-30071"
+        ]
+      },
+      {
+        "name": "established_customer",
+        "weight": -1.2,
+        "strength": 1.0,
+        "contribution": -1.2,
+        "direction": "legitimate",
+        "needs_verification": null,
+        "pattern_tag": null,
+        "description": "Customer tenure 1800 days, 40 clean transactions, no chargebacks.",
+        "evidence_ids": [
+          "EV-02"
+        ],
+        "graph_elements": [
+          "CUST-30071"
+        ]
+      },
+      {
+        "name": "step_up_passed",
+        "weight": -2.5,
+        "strength": 1.0,
+        "contribution": -2.5,
+        "direction": "legitimate",
+        "needs_verification": null,
+        "pattern_tag": null,
+        "description": "Cardholder completed app-based step-up authentication (biometric) and confirmed the purchase.",
+        "evidence_ids": [
+          "EV-07"
+        ],
+        "graph_elements": []
+      }
+    ],
+    "assessments": [
+      {
+        "p_fraud": 0.1823,
+        "confidence": 0.4148,
+        "components": {
+          "prior_log_odds": -0.201,
+          "signal_log_odds": -1.3,
+          "decisiveness": 0.6353,
+          "evidence_coverage": 0.5714,
+          "signal_conflict": 0.381
+        },
+        "required_verifications": [
+          "identity_verification"
+        ],
+        "missing_verifications": [
+          "identity_verification"
+        ],
+        "round": 0
+      },
+      {
+        "p_fraud": 0.018,
+        "confidence": 0.938,
+        "components": {
+          "prior_log_odds": -0.201,
+          "signal_log_odds": -3.8,
+          "decisiveness": 0.9641,
+          "evidence_coverage": 1.0,
+          "signal_conflict": 0.1739
+        },
+        "required_verifications": [
+          "identity_verification"
+        ],
+        "missing_verifications": [],
+        "round": 1
+      }
+    ],
+    "nba_log": [
+      {
+        "action": "MONITOR_ACCOUNT_AND_REQUEST_STEP_UP_AUTH",
+        "label": "Monitor account + request step-up auth",
+        "terminal": false,
+        "rationale": "Confidence 0.41 is below the 0.60 threshold (p_fraud 18%). Missing: identity_verification.",
+        "key_drivers": [
+          "established_customer",
+          "known_device",
+          "proxy_ip"
+        ],
+        "evidence_request": "step_up_auth",
+        "phase": "initial",
+        "round": 0,
+        "p_fraud": 0.1823,
+        "confidence": 0.4148,
+        "logged_at": "2026-09-24T13:01:00.635+00:00"
+      },
+      {
+        "action": "ALLOW_TRANSACTION",
+        "label": "Allow transaction",
+        "terminal": true,
+        "rationale": "Fraud probability 2% with confidence 0.94, at or above the 0.60 threshold.",
+        "key_drivers": [
+          "step_up_passed",
+          "established_customer",
+          "known_device",
+          "proxy_ip"
+        ],
+        "evidence_request": null,
+        "phase": "updated",
+        "round": 1,
+        "p_fraud": 0.018,
+        "confidence": 0.938,
+        "logged_at": "2026-09-24T13:01:00.637+00:00"
+      }
+    ],
+    "trace": [
+      {
+        "step": 1,
+        "node": "trigger",
+        "title": "Trigger: alert ingested",
+        "started_at": "2026-09-24T13:01:00.626+00:00",
+        "duration_ms": 0.02,
+        "summary": "PROXY_IP fired on T3100525 with risk score 0.45.",
+        "details": {
+          "alert": {
+            "case_id": "HHGOA-016",
+            "transaction_id": "T3100525",
+            "rule": "PROXY_IP",
+            "risk_score": 0.45,
+            "source": "hhgoa-risk-engine"
+          }
+        }
+      },
+      {
+        "step": 2,
+        "node": "investigate",
+        "title": "Investigate: GraphRAG evidence via TigerGraph MCP",
+        "started_at": "2026-09-24T13:01:00.627+00:00",
+        "duration_ms": 6.69,
+        "summary": "6 MCP tool calls (deterministic planner); pattern tags ['none']; 0 similar closed cases retrieved.",
+        "details": {
+          "tool_calls": [
+            {
+              "evidence_id": "EV-01",
+              "tool": "get_transaction_context",
+              "summary": "Txn T3100525 $95.00; device cards=1, IP cards=1, card 1h velocity=1, near-threshold 24h=0"
+            },
+            {
+              "evidence_id": "EV-02",
+              "tool": "get_customer_history",
+              "summary": "40 baseline txns, avg $69.59, 0 chargebacks, 1 known devices, countries ['US']"
+            },
+            {
+              "evidence_id": "EV-03",
+              "tool": "find_related_entities",
+              "summary": "2-hop neighbourhood of DEV-20061: Card=1, Customer=1, IP=2, Transaction=41; fraud txns=0, confirmed cases=0"
+            },
+            {
+              "evidence_id": "EV-04",
+              "tool": "find_related_entities",
+              "summary": "2-hop neighbourhood of IP-40056: Card=1, Customer=1, Device=1, IP=1, Transaction=41; fraud txns=0, confirmed cases=0"
+            },
+            {
+              "evidence_id": "EV-05",
+              "tool": "find_related_entities",
+              "summary": "2-hop neighbourhood of CUST-30071: Card=1, Device=1, IP=2, Transaction=41; fraud txns=0, confirmed cases=0"
+            },
+            {
+              "evidence_id": "EV-06",
+              "tool": "find_similar_cases",
+              "summary": "0 similar closed cases for tags []"
+            }
+          ]
+        }
+      },
+      {
+        "step": 3,
+        "node": "assess_uncertainty",
+        "title": "Assess uncertainty",
+        "started_at": "2026-09-24T13:01:00.634+00:00",
+        "duration_ms": 0.07,
+        "summary": "p_fraud=0.18, confidence=0.41 (coverage 0.57, conflict 0.38); 3 signals.",
+        "details": {
+          "assessment": {
+            "p_fraud": 0.1823,
+            "confidence": 0.4148,
+            "components": {
+              "prior_log_odds": -0.201,
+              "signal_log_odds": -1.3,
+              "decisiveness": 0.6353,
+              "evidence_coverage": 0.5714,
+              "signal_conflict": 0.381
+            },
+            "required_verifications": [
+              "identity_verification"
+            ],
+            "missing_verifications": [
+              "identity_verification"
+            ],
+            "round": 0
+          },
+          "signals": [
+            {
+              "name": "proxy_ip",
+              "contribution": 0.8
+            },
+            {
+              "name": "known_device",
+              "contribution": -0.9
+            },
+            {
+              "name": "established_customer",
+              "contribution": -1.2
+            }
+          ]
+        }
+      },
+      {
+        "step": 4,
+        "node": "next_best_action",
+        "title": "Next best action",
+        "started_at": "2026-09-24T13:01:00.635+00:00",
+        "duration_ms": 0.03,
+        "summary": "[initial] MONITOR_ACCOUNT_AND_REQUEST_STEP_UP_AUTH: Confidence 0.41 is below the 0.60 threshold (p_fraud 18%). Missing: identity_verification.",
+        "details": {
+          "nba": {
+            "action": "MONITOR_ACCOUNT_AND_REQUEST_STEP_UP_AUTH",
+            "label": "Monitor account + request step-up auth",
+            "terminal": false,
+            "rationale": "Confidence 0.41 is below the 0.60 threshold (p_fraud 18%). Missing: identity_verification.",
+            "key_drivers": [
+              "established_customer",
+              "known_device",
+              "proxy_ip"
+            ],
+            "evidence_request": "step_up_auth",
+            "phase": "initial",
+            "round": 0,
+            "p_fraud": 0.1823,
+            "confidence": 0.4148,
+            "logged_at": "2026-09-24T13:01:00.635+00:00"
+          }
+        }
+      },
+      {
+        "step": 5,
+        "node": "gather_more_evidence",
+        "title": "Gather more evidence",
+        "started_at": "2026-09-24T13:01:00.636+00:00",
+        "duration_ms": 0.02,
+        "summary": "Requested step_up_auth; received 1 item(s): Cardholder completed app-based step-up authentication (biometric) and confirmed the purchase.",
+        "details": {
+          "request": "step_up_auth",
+          "received": [
+            {
+              "evidence_id": "EV-07",
+              "label": "followup:step_up_auth",
+              "source": "step_up_auth",
+              "tool": null,
+              "summary": "Cardholder completed app-based step-up authentication (biometric) and confirmed the purchase.",
+              "graph_elements": [],
+              "category": "identity_verification",
+              "round": 1
+            }
+          ]
+        }
+      },
+      {
+        "step": 6,
+        "node": "assess_uncertainty",
+        "title": "Assess uncertainty",
+        "started_at": "2026-09-24T13:01:00.636+00:00",
+        "duration_ms": 0.07,
+        "summary": "p_fraud=0.02, confidence=0.94 (coverage 1.00, conflict 0.17); 4 signals.",
+        "details": {
+          "assessment": {
+            "p_fraud": 0.018,
+            "confidence": 0.938,
+            "components": {
+              "prior_log_odds": -0.201,
+              "signal_log_odds": -3.8,
+              "decisiveness": 0.9641,
+              "evidence_coverage": 1.0,
+              "signal_conflict": 0.1739
+            },
+            "required_verifications": [
+              "identity_verification"
+            ],
+            "missing_verifications": [],
+            "round": 1
+          },
+          "signals": [
+            {
+              "name": "proxy_ip",
+              "contribution": 0.8
+            },
+            {
+              "name": "known_device",
+              "contribution": -0.9
+            },
+            {
+              "name": "established_customer",
+              "contribution": -1.2
+            },
+            {
+              "name": "step_up_passed",
+              "contribution": -2.5
+            }
+          ]
+        }
+      },
+      {
+        "step": 7,
+        "node": "next_best_action",
+        "title": "Next best action",
+        "started_at": "2026-09-24T13:01:00.637+00:00",
+        "duration_ms": 0.02,
+        "summary": "[updated] ALLOW_TRANSACTION: Fraud probability 2% with confidence 0.94, at or above the 0.60 threshold.",
+        "details": {
+          "nba": {
+            "action": "ALLOW_TRANSACTION",
+            "label": "Allow transaction",
+            "terminal": true,
+            "rationale": "Fraud probability 2% with confidence 0.94, at or above the 0.60 threshold.",
+            "key_drivers": [
+              "step_up_passed",
+              "established_customer",
+              "known_device",
+              "proxy_ip"
+            ],
+            "evidence_request": null,
+            "phase": "updated",
+            "round": 1,
+            "p_fraud": 0.018,
+            "confidence": 0.938,
+            "logged_at": "2026-09-24T13:01:00.637+00:00"
+          }
+        }
+      },
+      {
+        "step": 8,
+        "node": "update_case_memory",
+        "title": "Update case memory",
+        "started_at": "2026-09-24T13:01:00.637+00:00",
+        "duration_ms": 0.92,
+        "summary": "Case HHGOA-016 written back to graph as closed (ALLOW_TRANSACTION).",
+        "details": {
+          "memory": {
+            "status": "closed",
+            "outcome": "false_positive",
+            "decision": "ALLOW_TRANSACTION",
+            "confidence": 0.938,
+            "summary": "Fraud probability 2% with confidence 0.94, at or above the 0.60 threshold.",
+            "pattern_tags": [],
+            "sar_filed": false,
+            "evidence_ids": [
+              "EV-01",
+              "EV-02",
+              "EV-07"
+            ],
+            "closed_ts": 30000000
+          }
+        }
+      }
+    ],
+    "mcp_tool_calls": [
+      {
+        "call_id": "mcp-106",
+        "tool": "get_transaction_context",
+        "arguments": {
+          "transaction_id": "T3100525"
+        },
+        "ok": true,
+        "latency_ms": 1.32,
+        "error": null
+      },
+      {
+        "call_id": "mcp-107",
+        "tool": "get_customer_history",
+        "arguments": {
+          "customer_id": "CUST-30071",
+          "as_of_ts": 30000000
+        },
+        "ok": true,
+        "latency_ms": 1.13,
+        "error": null
+      },
+      {
+        "call_id": "mcp-108",
+        "tool": "find_related_entities",
+        "arguments": {
+          "entity_id": "DEV-20061",
+          "hops": 2,
+          "as_of_ts": 30000000
+        },
+        "ok": true,
+        "latency_ms": 1.02,
+        "error": null
+      },
+      {
+        "call_id": "mcp-109",
+        "tool": "find_related_entities",
+        "arguments": {
+          "entity_id": "IP-40056",
+          "hops": 2,
+          "as_of_ts": 30000000
+        },
+        "ok": true,
+        "latency_ms": 0.94,
+        "error": null
+      },
+      {
+        "call_id": "mcp-110",
+        "tool": "find_related_entities",
+        "arguments": {
+          "entity_id": "CUST-30071",
+          "hops": 2,
+          "as_of_ts": 30000000
+        },
+        "ok": true,
+        "latency_ms": 1.16,
+        "error": null
+      },
+      {
+        "call_id": "mcp-111",
+        "tool": "find_similar_cases",
+        "arguments": {
+          "transaction_id": "T3100525",
+          "pattern_tags": [],
+          "k": 5
+        },
+        "ok": true,
+        "latency_ms": 0.93,
+        "error": null
+      },
+      {
+        "call_id": "mcp-112",
+        "tool": "update_case_memory",
+        "arguments": {
+          "case_id": "HHGOA-016",
+          "memory": {
+            "status": "closed",
+            "outcome": "false_positive",
+            "decision": "ALLOW_TRANSACTION",
+            "confidence": 0.938,
+            "summary": "Fraud probability 2% with confidence 0.94, at or above the 0.60 threshold.",
+            "pattern_tags": [],
+            "sar_filed": false,
+            "evidence_ids": [
+              "EV-01",
+              "EV-02",
+              "EV-07"
+            ],
+            "closed_ts": 30000000
+          }
+        },
+        "ok": true,
+        "latency_ms": 0.88,
+        "error": null
+      }
+    ],
+    "graph_context": {
+      "transaction": {
+        "id": "T3100525",
+        "type": "Transaction",
+        "amount": 95.0,
+        "ts": 30000000,
+        "product_cd": "W",
+        "is_fraud": -1,
+        "chargeback": false
+      },
+      "card": {
+        "id": "CARD-10072",
+        "type": "Card",
+        "card1": 10861,
+        "card4": "visa",
+        "card6": "debit",
+        "issuer_country": "US"
+      },
+      "device": {
+        "id": "DEV-20061",
+        "type": "Device",
+        "device_type": "desktop",
+        "device_info": "Windows"
+      },
+      "ip": {
+        "id": "IP-40056",
+        "type": "IP",
+        "country": "US",
+        "is_proxy": true,
+        "asn": "AS13335"
+      },
+      "customer": {
+        "id": "CUST-30071",
+        "type": "Customer",
+        "tenure_days": 1800,
+        "addr1": 153,
+        "p_emaildomain": "gmail.com",
+        "kyc_level": "standard",
+        "segment": "retail"
+      },
+      "stats": {
+        "device_distinct_cards": 1,
+        "device_distinct_customers": 1,
+        "device_cards": [
+          "CARD-10072"
+        ],
+        "ip_distinct_cards": 1,
+        "ip_distinct_customers": 1,
+        "ip_cards_1h": 1,
+        "card_txn_count_1h": 1,
+        "card_amount_1h": 95.0,
+        "card_countries_1h": [
+          "US"
+        ],
+        "customer_txn_count_24h": 1,
+        "customer_amount_24h": 95.0,
+        "near_threshold_count_24h": 0,
+        "fraud_labeled_neighbor_txns": []
+      },
+      "customer_history": {
+        "cards": [
+          "CARD-10072"
+        ],
+        "txn_count": 40,
+        "avg_amount": 69.59,
+        "max_amount": 110.27,
+        "chargeback_count": 0,
+        "known_device_ids": [
+          "DEV-20061"
+        ],
+        "known_ip_countries": [
+          "US"
+        ],
+        "days_since_last_txn": 6.4,
+        "prior_cases": []
+      },
+      "neighbourhoods": {
+        "related_device": {
+          "root": "DEV-20061",
+          "counts": {
+            "Card": 1,
+            "Customer": 1,
+            "IP": 2,
+            "Transaction": 41
+          },
+          "fraud_transactions": [],
+          "confirmed_fraud_cases": []
+        },
+        "related_ip": {
+          "root": "IP-40056",
+          "counts": {
+            "Card": 1,
+            "Customer": 1,
+            "Device": 1,
+            "IP": 1,
+            "Transaction": 41
+          },
+          "fraud_transactions": [],
+          "confirmed_fraud_cases": []
+        },
+        "related_customer": {
+          "root": "CUST-30071",
+          "counts": {
+            "Card": 1,
+            "Device": 1,
+            "IP": 2,
+            "Transaction": 41
+          },
+          "fraud_transactions": [],
+          "confirmed_fraud_cases": []
+        }
+      },
+      "similar_cases": [],
+      "view": {
+        "nodes": [
+          {
+            "id": "T3100525",
+            "type": "Transaction",
+            "label": "T3100525 ($95)",
+            "role": "focal",
+            "flagged": false
+          },
+          {
+            "id": "CARD-10072",
+            "type": "Card",
+            "label": "CARD-10072",
+            "role": "context",
+            "flagged": false
+          },
+          {
+            "id": "DEV-20061",
+            "type": "Device",
+            "label": "DEV-20061 (Windows)",
+            "role": "context",
+            "flagged": false
+          },
+          {
+            "id": "IP-40056",
+            "type": "IP",
+            "label": "IP-40056 (US, proxy)",
+            "role": "context",
+            "flagged": true
+          },
+          {
+            "id": "CUST-30071",
+            "type": "Customer",
+            "label": "CUST-30071",
+            "role": "context",
+            "flagged": false
+          }
+        ],
+        "edges": [
+          {
+            "source": "T3100525",
+            "target": "CARD-10072",
+            "type": "PAID_WITH"
+          },
+          {
+            "source": "T3100525",
+            "target": "DEV-20061",
+            "type": "USED_DEVICE"
+          },
+          {
+            "source": "T3100525",
+            "target": "IP-40056",
+            "type": "FROM_IP"
+          },
+          {
+            "source": "T3100525",
+            "target": "CUST-30071",
+            "type": "PLACED_BY"
+          }
+        ]
+      }
+    }
+  },
+  "nba_before_additional_evidence": {
+    "action": "MONITOR_ACCOUNT_AND_REQUEST_STEP_UP_AUTH",
+    "label": "Monitor account + request step-up auth",
+    "terminal": false,
+    "rationale": "Confidence 0.41 is below the 0.60 threshold (p_fraud 18%). Missing: identity_verification.",
+    "key_drivers": [
+      "established_customer",
+      "known_device",
+      "proxy_ip"
+    ],
+    "evidence_request": "step_up_auth",
+    "phase": "initial",
+    "round": 0,
+    "p_fraud": 0.1823,
+    "confidence": 0.4148,
+    "logged_at": "2026-09-24T13:01:00.635+00:00"
+  },
+  "additional_evidence_requested": true,
+  "additional_evidence": [
+    {
+      "category": "identity_verification",
+      "source": "step_up_auth",
+      "signal": "step_up_passed",
+      "weight": -2.5,
+      "strength": 1.0,
+      "description": "Cardholder completed app-based step-up authentication (biometric) and confirmed the purchase.",
+      "evidence_id": "EV-07"
+    }
+  ],
+  "nba_after_additional_evidence": {
+    "action": "ALLOW_TRANSACTION",
+    "label": "Allow transaction",
+    "terminal": true,
+    "rationale": "Fraud probability 2% with confidence 0.94, at or above the 0.60 threshold.",
+    "key_drivers": [
+      "step_up_passed",
+      "established_customer",
+      "known_device",
+      "proxy_ip"
+    ],
+    "evidence_request": null,
+    "phase": "updated",
+    "round": 1,
+    "p_fraud": 0.018,
+    "confidence": 0.938,
+    "logged_at": "2026-09-24T13:01:00.637+00:00"
+  },
+  "final_decision": {
+    "action": "ALLOW_TRANSACTION",
+    "label": "Allow transaction",
+    "p_fraud": 0.018,
+    "confidence": 0.938,
+    "rationale": "Fraud probability 2% with confidence 0.94, at or above the 0.60 threshold.",
+    "justification": [
+      {
+        "name": "step_up_passed",
+        "direction": "legitimate",
+        "contribution": -2.5,
+        "description": "Cardholder completed app-based step-up authentication (biometric) and confirmed the purchase.",
+        "evidence_ids": [
+          "EV-07"
+        ],
+        "graph_elements": []
+      },
+      {
+        "name": "established_customer",
+        "direction": "legitimate",
+        "contribution": -1.2,
+        "description": "Customer tenure 1800 days, 40 clean transactions, no chargebacks.",
+        "evidence_ids": [
+          "EV-02"
+        ],
+        "graph_elements": [
+          "CUST-30071"
+        ]
+      },
+      {
+        "name": "known_device",
+        "direction": "legitimate",
+        "contribution": -0.9,
+        "description": "Device DEV-20061 appears in the customer's baseline history.",
+        "evidence_ids": [
+          "EV-02"
+        ],
+        "graph_elements": [
+          "DEV-20061",
+          "CUST-30071"
+        ]
+      },
+      {
+        "name": "proxy_ip",
+        "direction": "fraud",
+        "contribution": 0.8,
+        "description": "Transaction routed through proxy/hosting ASN AS13335 (US).",
+        "evidence_ids": [
+          "EV-01"
+        ],
+        "graph_elements": [
+          "IP-40056"
+        ]
+      }
+    ],
+    "evidence_cited": [
+      {
+        "evidence_id": "EV-01",
+        "label": "context",
+        "source": "tigergraph-mcp",
+        "tool": "get_transaction_context",
+        "mcp_call_id": "mcp-106",
+        "arguments": {
+          "transaction_id": "T3100525"
+        },
+        "latency_ms": 1.32,
+        "origin": "playbook",
+        "summary": "Txn T3100525 $95.00; device cards=1, IP cards=1, card 1h velocity=1, near-threshold 24h=0",
+        "graph_elements": [
+          "T3100525",
+          "CARD-10072",
+          "DEV-20061",
+          "IP-40056",
+          "CUST-30071"
+        ]
+      },
+      {
+        "evidence_id": "EV-02",
+        "label": "history",
+        "source": "tigergraph-mcp",
+        "tool": "get_customer_history",
+        "mcp_call_id": "mcp-107",
+        "arguments": {
+          "customer_id": "CUST-30071",
+          "as_of_ts": 30000000
+        },
+        "latency_ms": 1.13,
+        "origin": "playbook",
+        "summary": "40 baseline txns, avg $69.59, 0 chargebacks, 1 known devices, countries ['US']",
+        "graph_elements": [
+          "CUST-30071",
+          "DEV-20061"
+        ]
+      },
+      {
+        "evidence_id": "EV-07",
+        "label": "followup:step_up_auth",
+        "source": "step_up_auth",
+        "tool": null,
+        "summary": "Cardholder completed app-based step-up authentication (biometric) and confirmed the purchase.",
+        "graph_elements": [],
+        "category": "identity_verification",
+        "round": 1
+      }
+    ],
+    "similar_cases": [],
+    "sar_required": false
+  },
+  "sar": {
+    "required": false,
+    "narrative": null
+  },
+  "case_memory_write": {
+    "case_id": "HHGOA-016",
+    "written": [
+      "closed_ts",
+      "confidence",
+      "decision",
+      "evidence_ids",
+      "outcome",
+      "pattern_tags",
+      "sar_filed",
+      "status",
+      "summary"
+    ],
+    "backend": "mock",
+    "memory": {
+      "status": "closed",
+      "outcome": "false_positive",
+      "decision": "ALLOW_TRANSACTION",
+      "confidence": 0.938,
+      "summary": "Fraud probability 2% with confidence 0.94, at or above the 0.60 threshold.",
+      "pattern_tags": [],
+      "sar_filed": false,
+      "evidence_ids": [
+        "EV-01",
+        "EV-02",
+        "EV-07"
+      ],
+      "closed_ts": 30000000
+    }
+  },
+  "benchmark": {
+    "expected_initial_terminal": false,
+    "expected_final_action": "ALLOW_TRANSACTION",
+    "passed": true
+  }
+}

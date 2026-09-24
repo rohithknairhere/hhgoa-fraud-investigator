@@ -1,0 +1,126 @@
+{
+  "case_id": "HHG-011",
+  "case": {
+    "status": "escalated",
+    "verdict": "uncertain",
+    "fraud_probability": 0.36,
+    "pattern": "card_not_present_new_device",
+    "pattern_description": "",
+    "affected_txn_ids": [
+      "3583368"
+    ],
+    "first_suspicious_txn_id": "3583368",
+    "connected_card_ids": [],
+    "connected_device_profiles": [],
+    "exposure_usd": 131.3,
+    "evidence": [
+      {
+        "claim": "Online purchase from device profile 'SM-G610F Build/NRD90M |  | chrome 66.0 for android | ', identity record id_15=New; never seen on this card before",
+        "source": "graph",
+        "ref": "query:card_history(card_id=C11923-K2)",
+        "entity_ids": [
+          "3583368"
+        ]
+      },
+      {
+        "claim": "$131.30 vs this card's 95th percentile of $107.97 for online purchases over 10280 prior transactions",
+        "source": "graph",
+        "ref": "query:card_history(card_id=C11923-K2)",
+        "entity_ids": [
+          "3583368"
+        ]
+      },
+      {
+        "claim": "Classifier trained on the Jul-Oct closed cases (Vesta V/C/D/M features, unnamed) scores the flagged transaction 0.16; bank risk score was 0.39",
+        "source": "graph",
+        "ref": "model:closed_case_memory_classifier",
+        "entity_ids": [
+          "3583368"
+        ]
+      },
+      {
+        "claim": "Retrieved closed cases: CC-4743 (cleared, none, $0.00); CC-4501 (confirmed_fraud, card_testing, $1,508.58)",
+        "source": "graph",
+        "ref": "query:similar_closed_cases",
+        "entity_ids": [
+          "CC-4743",
+          "CC-4501"
+        ]
+      },
+      {
+        "claim": "Customer cannot provide further detail; no confirmation either way within 24 hours",
+        "source": "customer",
+        "ref": "evidence_request:1",
+        "entity_ids": []
+      }
+    ],
+    "similar_prior_cases": [
+      "CC-4743",
+      "CC-4501"
+    ],
+    "summary": "Customer report on 3583368 ($131.30, online). Initial fraud probability 0.36; after the customer validation it is 0.36. Verdict uncertain.",
+    "written_to_graph": false,
+    "graph_case_id": ""
+  },
+  "evidence_requests": [
+    {
+      "type": "customer_validation",
+      "asked_after_step": 4,
+      "assumed_response": "Customer cannot provide further detail; no confirmation either way within 24 hours"
+    }
+  ],
+  "next_best_actions": {
+    "initial": [
+      {
+        "action": "CREATE_CASE",
+        "route": "auto",
+        "reason": "3a: a case is opened whenever evidence is requested"
+      },
+      {
+        "action": "VERIFY_WITH_CUSTOMER",
+        "route": "auto",
+        "reason": "R1: probability 0.36 rests on weak or single signals; verify before any block"
+      },
+      {
+        "action": "MONITOR_CARD",
+        "route": "auto",
+        "reason": "Raise monitoring while verification is pending"
+      }
+    ],
+    "final": [
+      {
+        "action": "CREATE_CASE",
+        "route": "auto",
+        "reason": "3a"
+      },
+      {
+        "action": "MONITOR_CARD",
+        "route": "auto",
+        "reason": "R4: no reply within 24 hours"
+      },
+      {
+        "action": "DECLINE_TRANSACTION",
+        "route": "L1",
+        "reason": "R4: decline pending authorizations"
+      },
+      {
+        "action": "ESCALATE_TO_ANALYST",
+        "route": "auto",
+        "reason": "R8: uncertain verdict with exposure or conflicting evidence"
+      }
+    ],
+    "what_changed": "Assumed response (Customer cannot provide further detail; no confirmation either way within 24 hours) left fraud probability at 0.36; with the verification step resolved, the recommendation moved from verification to the actions the policy requires."
+  },
+  "sar": {
+    "file": false,
+    "reason": "No report: verdict is not fraud.",
+    "narrative": "",
+    "subjects": [],
+    "total_amount_usd": 0,
+    "activity_dates": []
+  },
+  "stop_reason": "No reply received; further automated steps are unlikely to change the decision, so the case is handed to monitoring/analyst (policy 6).",
+  "tool_calls": 6,
+  "tokens": 0,
+  "latency_s": 0.15
+}

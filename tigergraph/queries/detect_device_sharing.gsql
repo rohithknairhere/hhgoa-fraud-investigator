@@ -1,0 +1,17 @@
+// Devices used by >= min_cards distinct cards (card-sharing / fraud-ring handsets).
+CREATE OR REPLACE QUERY detect_device_sharing(INT min_cards = 3) FOR GRAPH HHGOA_IEEE {
+  TYPEDEF TUPLE<STRING device_id, STRING device_info, INT card_count, INT customer_count> Row;
+  SetAccum<VERTEX<Card>> @card, @cards;
+  SetAccum<VERTEX<Customer>> @cust, @custs;
+  HeapAccum<Row>(1000, card_count DESC) @@devices;
+
+  T = {Transaction.*};
+  T = SELECT t FROM T:t -(PAID_WITH)- Card:c ACCUM t.@card += c;
+  T = SELECT t FROM T:t -(PLACED_BY)- Customer:u ACCUM t.@cust += u;
+  D = SELECT d FROM T:t -(USED_DEVICE)- Device:d
+      ACCUM d.@cards += t.@card, d.@custs += t.@cust
+      HAVING d.@cards.size() >= min_cards;
+  D = SELECT d FROM D:d
+      POST-ACCUM @@devices += Row(d.device_id, d.device_info, d.@cards.size(), d.@custs.size());
+  PRINT @@devices AS devices;
+}

@@ -1,0 +1,116 @@
+{
+  "case_id": "HHG-004",
+  "case": {
+    "status": "closed_legitimate",
+    "verdict": "legitimate",
+    "fraud_probability": 0.06,
+    "pattern": "none",
+    "pattern_description": "",
+    "affected_txn_ids": [],
+    "first_suspicious_txn_id": "",
+    "connected_card_ids": [],
+    "connected_device_profiles": [],
+    "exposure_usd": 0,
+    "evidence": [
+      {
+        "claim": "Online purchase from device profile ' |  | firefox 47.0 | ', identity record id_15=New; never seen on this card before",
+        "source": "graph",
+        "ref": "query:card_history(card_id=C08106-K1)",
+        "entity_ids": [
+          "3583227"
+        ]
+      },
+      {
+        "claim": "$128.33 vs this card's 95th percentile of $96.39 for online purchases over 208 prior transactions",
+        "source": "graph",
+        "ref": "query:card_history(card_id=C08106-K1)",
+        "entity_ids": [
+          "3583227"
+        ]
+      },
+      {
+        "claim": "Classifier trained on the Jul-Oct closed cases (Vesta V/C/D/M features, unnamed) scores the flagged transaction 0.01; bank risk score was 0.34",
+        "source": "graph",
+        "ref": "model:closed_case_memory_classifier",
+        "entity_ids": [
+          "3583227"
+        ]
+      },
+      {
+        "claim": "Retrieved closed cases: CC-0696 (cleared, none, $0.00); CC-3778 (confirmed_fraud, card_not_present_fraud, $58.42); CC-2121 (confirmed_fraud, card_not_present_fraud, $102.68)",
+        "source": "graph",
+        "ref": "query:similar_closed_cases",
+        "entity_ids": [
+          "CC-0696",
+          "CC-3778",
+          "CC-2121"
+        ]
+      },
+      {
+        "claim": "Customer confirms the purchase (assumed: activity matches the card's own history)",
+        "source": "customer",
+        "ref": "evidence_request:1",
+        "entity_ids": []
+      }
+    ],
+    "similar_prior_cases": [
+      "CC-0696",
+      "CC-3778",
+      "CC-2121"
+    ],
+    "summary": "Customer report on 3583227 ($128.33, online). Initial fraud probability 0.06; after the customer validation it is 0.06. Verdict legitimate.",
+    "written_to_graph": false,
+    "graph_case_id": ""
+  },
+  "evidence_requests": [
+    {
+      "type": "customer_validation",
+      "asked_after_step": 4,
+      "assumed_response": "Customer confirms the purchase (assumed: activity matches the card's own history)"
+    }
+  ],
+  "next_best_actions": {
+    "initial": [
+      {
+        "action": "CREATE_CASE",
+        "route": "auto",
+        "reason": "3a: a case is opened whenever evidence is requested"
+      },
+      {
+        "action": "VERIFY_WITH_CUSTOMER",
+        "route": "auto",
+        "reason": "R1: probability 0.06 rests on weak or single signals; verify before any block"
+      }
+    ],
+    "final": [
+      {
+        "action": "CREATE_CASE",
+        "route": "auto",
+        "reason": "3a: case opened for the verification, closed as legitimate"
+      },
+      {
+        "action": "ALLOW_TRANSACTION",
+        "route": "auto",
+        "reason": "R3: customer confirmed the activity"
+      },
+      {
+        "action": "CLOSE_NO_FRAUD",
+        "route": "auto",
+        "reason": "R3"
+      }
+    ],
+    "what_changed": "Assumed response (Customer confirms the purchase) left fraud probability at 0.06; with the verification step resolved, the recommendation moved from verification to the actions the policy requires."
+  },
+  "sar": {
+    "file": false,
+    "reason": "No report: verdict is not fraud.",
+    "narrative": "",
+    "subjects": [],
+    "total_amount_usd": 0,
+    "activity_dates": []
+  },
+  "stop_reason": "The verification response settled the question (policy 6).",
+  "tool_calls": 6,
+  "tokens": 0,
+  "latency_s": 0.07
+}

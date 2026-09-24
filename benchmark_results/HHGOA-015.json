@@ -1,0 +1,1449 @@
+{
+  "case_id": "HHGOA-015",
+  "title": "New handset passes SMS OTP, then a SIM-swap report",
+  "typology": "account_takeover",
+  "generated_at": "2026-09-24T13:01:00+00:00",
+  "graph_backend": "mock",
+  "planner": "deterministic",
+  "alert": {
+    "case_id": "HHGOA-015",
+    "transaction_id": "T3100484",
+    "rule": "ATO_NEW_DEVICE",
+    "risk_score": 0.66,
+    "source": "hhgoa-risk-engine"
+  },
+  "investigation_record": {
+    "transaction_id": "T3100484",
+    "customer_id": "CUST-30070",
+    "pattern_tags": [
+      "account_takeover"
+    ],
+    "evidence": [
+      {
+        "evidence_id": "EV-01",
+        "label": "context",
+        "source": "tigergraph-mcp",
+        "tool": "get_transaction_context",
+        "mcp_call_id": "mcp-099",
+        "arguments": {
+          "transaction_id": "T3100484"
+        },
+        "latency_ms": 1.19,
+        "origin": "playbook",
+        "summary": "Txn T3100484 $500.00; device cards=1, IP cards=1, card 1h velocity=1, near-threshold 24h=0",
+        "graph_elements": [
+          "T3100484",
+          "CARD-10071",
+          "DEV-20060",
+          "IP-40054",
+          "CUST-30070"
+        ]
+      },
+      {
+        "evidence_id": "EV-02",
+        "label": "history",
+        "source": "tigergraph-mcp",
+        "tool": "get_customer_history",
+        "mcp_call_id": "mcp-100",
+        "arguments": {
+          "customer_id": "CUST-30070",
+          "as_of_ts": 29000000
+        },
+        "latency_ms": 0.99,
+        "origin": "playbook",
+        "summary": "45 baseline txns, avg $102.57, 0 chargebacks, 1 known devices, countries ['US']",
+        "graph_elements": [
+          "CUST-30070",
+          "DEV-20059"
+        ]
+      },
+      {
+        "evidence_id": "EV-03",
+        "label": "related_device",
+        "source": "tigergraph-mcp",
+        "tool": "find_related_entities",
+        "mcp_call_id": "mcp-101",
+        "arguments": {
+          "entity_id": "DEV-20060",
+          "hops": 2,
+          "as_of_ts": 29000000
+        },
+        "latency_ms": 1.14,
+        "origin": "playbook",
+        "summary": "2-hop neighbourhood of DEV-20060: Card=1, Customer=1, Device=1, IP=2, Transaction=46; fraud txns=0, confirmed cases=0",
+        "graph_elements": [
+          "DEV-20060"
+        ]
+      },
+      {
+        "evidence_id": "EV-04",
+        "label": "related_ip",
+        "source": "tigergraph-mcp",
+        "tool": "find_related_entities",
+        "mcp_call_id": "mcp-102",
+        "arguments": {
+          "entity_id": "IP-40054",
+          "hops": 2,
+          "as_of_ts": 29000000
+        },
+        "latency_ms": 1.05,
+        "origin": "playbook",
+        "summary": "2-hop neighbourhood of IP-40054: Card=1, Customer=1, Device=2, IP=1, Transaction=46; fraud txns=0, confirmed cases=0",
+        "graph_elements": [
+          "IP-40054"
+        ]
+      },
+      {
+        "evidence_id": "EV-05",
+        "label": "related_customer",
+        "source": "tigergraph-mcp",
+        "tool": "find_related_entities",
+        "mcp_call_id": "mcp-103",
+        "arguments": {
+          "entity_id": "CUST-30070",
+          "hops": 2,
+          "as_of_ts": 29000000
+        },
+        "latency_ms": 1.15,
+        "origin": "playbook",
+        "summary": "2-hop neighbourhood of CUST-30070: Card=1, Device=2, IP=2, Transaction=46; fraud txns=0, confirmed cases=0",
+        "graph_elements": [
+          "CUST-30070"
+        ]
+      },
+      {
+        "evidence_id": "EV-06",
+        "label": "similar",
+        "source": "tigergraph-mcp",
+        "tool": "find_similar_cases",
+        "mcp_call_id": "mcp-104",
+        "arguments": {
+          "transaction_id": "T3100484",
+          "pattern_tags": [
+            "account_takeover"
+          ],
+          "k": 5
+        },
+        "latency_ms": 1.14,
+        "origin": "deterministic",
+        "summary": "5 similar closed cases for tags ['account_takeover']",
+        "graph_elements": [
+          "CASE-H010",
+          "CASE-H012",
+          "HHGOA-003",
+          "CASE-H008",
+          "CASE-H011"
+        ]
+      },
+      {
+        "evidence_id": "EV-07",
+        "label": "followup:step_up_auth",
+        "source": "step_up_auth",
+        "tool": null,
+        "summary": "SMS one-time passcode entered correctly (weak factor: SIM-bound).",
+        "graph_elements": [],
+        "category": "identity_verification",
+        "round": 1
+      },
+      {
+        "evidence_id": "EV-08",
+        "label": "followup:analyst_review",
+        "source": "telco_check",
+        "tool": null,
+        "summary": "Carrier lookup: SIM swapped 2h before the OTP; OTP delivery was compromised.",
+        "graph_elements": [],
+        "category": "analyst_review",
+        "round": 2
+      }
+    ],
+    "signals": [
+      {
+        "name": "new_device",
+        "weight": 0.7,
+        "strength": 1.0,
+        "contribution": 0.7,
+        "direction": "fraud",
+        "needs_verification": "identity_verification",
+        "pattern_tag": null,
+        "description": "Device DEV-20060 has never been used by customer CUST-30070 (known devices: DEV-20059).",
+        "evidence_ids": [
+          "EV-02",
+          "EV-01"
+        ],
+        "graph_elements": [
+          "DEV-20060",
+          "CUST-30070"
+        ]
+      },
+      {
+        "name": "known_geo",
+        "weight": -0.4,
+        "strength": 1.0,
+        "contribution": -0.4,
+        "direction": "legitimate",
+        "needs_verification": null,
+        "pattern_tag": null,
+        "description": "US matches the customer's usual locations.",
+        "evidence_ids": [
+          "EV-02"
+        ],
+        "graph_elements": [
+          "IP-40054"
+        ]
+      },
+      {
+        "name": "amount_anomaly",
+        "weight": 1.0,
+        "strength": 0.479,
+        "contribution": 0.479,
+        "direction": "fraud",
+        "needs_verification": "identity_verification",
+        "pattern_tag": null,
+        "description": "$500.00 is 4.9x the customer's average of $102.57.",
+        "evidence_ids": [
+          "EV-02",
+          "EV-01"
+        ],
+        "graph_elements": [
+          "T3100484",
+          "CUST-30070"
+        ]
+      },
+      {
+        "name": "established_customer",
+        "weight": -1.2,
+        "strength": 1.0,
+        "contribution": -1.2,
+        "direction": "legitimate",
+        "needs_verification": null,
+        "pattern_tag": null,
+        "description": "Customer tenure 1500 days, 45 clean transactions, no chargebacks.",
+        "evidence_ids": [
+          "EV-02"
+        ],
+        "graph_elements": [
+          "CUST-30070"
+        ]
+      },
+      {
+        "name": "similar_case_precedent",
+        "weight": 0.4,
+        "strength": 0.6,
+        "contribution": 0.24,
+        "direction": "fraud",
+        "needs_verification": null,
+        "pattern_tag": null,
+        "description": "Closest closed cases: CASE-H010 (confirmed_fraud, sim 0.60), CASE-H012 (false_positive, sim 0.60), HHGOA-003 (confirmed_fraud, sim 0.60); 67% similarity-weighted fraud rate.",
+        "evidence_ids": [
+          "EV-06"
+        ],
+        "graph_elements": [
+          "CASE-H010",
+          "CASE-H012",
+          "HHGOA-003"
+        ]
+      },
+      {
+        "name": "sms_otp_passed",
+        "weight": -1.0,
+        "strength": 1.0,
+        "contribution": -1.0,
+        "direction": "legitimate",
+        "needs_verification": null,
+        "pattern_tag": null,
+        "description": "SMS one-time passcode entered correctly (weak factor: SIM-bound).",
+        "evidence_ids": [
+          "EV-07"
+        ],
+        "graph_elements": []
+      },
+      {
+        "name": "sim_swap_detected",
+        "weight": 3.0,
+        "strength": 1.0,
+        "contribution": 3.0,
+        "direction": "fraud",
+        "needs_verification": null,
+        "pattern_tag": null,
+        "description": "Carrier lookup: SIM swapped 2h before the OTP; OTP delivery was compromised.",
+        "evidence_ids": [
+          "EV-08"
+        ],
+        "graph_elements": []
+      }
+    ],
+    "assessments": [
+      {
+        "p_fraud": 0.6183,
+        "confidence": 0.0427,
+        "components": {
+          "prior_log_odds": 0.663,
+          "signal_log_odds": -0.181,
+          "decisiveness": 0.2366,
+          "evidence_coverage": 0.5714,
+          "signal_conflict": 0.8869
+        },
+        "required_verifications": [
+          "identity_verification"
+        ],
+        "missing_verifications": [
+          "identity_verification"
+        ],
+        "round": 0
+      },
+      {
+        "p_fraud": 0.3734,
+        "confidence": 0.1714,
+        "components": {
+          "prior_log_odds": 0.663,
+          "signal_log_odds": -1.181,
+          "decisiveness": 0.2532,
+          "evidence_coverage": 1.0,
+          "signal_conflict": 0.5458
+        },
+        "required_verifications": [
+          "identity_verification"
+        ],
+        "missing_verifications": [],
+        "round": 1
+      },
+      {
+        "p_fraud": 0.9229,
+        "confidence": 0.7575,
+        "components": {
+          "prior_log_odds": 0.663,
+          "signal_log_odds": 1.819,
+          "decisiveness": 0.8458,
+          "evidence_coverage": 1.0,
+          "signal_conflict": 0.5884
+        },
+        "required_verifications": [
+          "identity_verification"
+        ],
+        "missing_verifications": [],
+        "round": 2
+      }
+    ],
+    "nba_log": [
+      {
+        "action": "MONITOR_ACCOUNT_AND_REQUEST_STEP_UP_AUTH",
+        "label": "Monitor account + request step-up auth",
+        "terminal": false,
+        "rationale": "Confidence 0.04 is below the 0.60 threshold (p_fraud 62%). Missing: identity_verification.",
+        "key_drivers": [
+          "established_customer",
+          "new_device",
+          "amount_anomaly",
+          "known_geo"
+        ],
+        "evidence_request": "step_up_auth",
+        "phase": "initial",
+        "round": 0,
+        "p_fraud": 0.6183,
+        "confidence": 0.0427,
+        "logged_at": "2026-09-24T13:01:00.619+00:00"
+      },
+      {
+        "action": "HOLD_AND_REQUEST_ANALYST_REVIEW",
+        "label": "Hold funds + request analyst review",
+        "terminal": false,
+        "rationale": "Confidence 0.17 is below the 0.60 threshold (p_fraud 37%). Missing: corroborating evidence.",
+        "key_drivers": [
+          "established_customer",
+          "sms_otp_passed",
+          "new_device",
+          "amount_anomaly"
+        ],
+        "evidence_request": "analyst_review",
+        "phase": "updated",
+        "round": 1,
+        "p_fraud": 0.3734,
+        "confidence": 0.1714,
+        "logged_at": "2026-09-24T13:01:00.620+00:00"
+      },
+      {
+        "action": "BLOCK_TRANSACTION",
+        "label": "Block transaction & reissue card",
+        "terminal": true,
+        "rationale": "Fraud probability 92% with confidence 0.76, at or above the 0.60 threshold.",
+        "key_drivers": [
+          "sim_swap_detected",
+          "established_customer",
+          "sms_otp_passed",
+          "new_device"
+        ],
+        "evidence_request": null,
+        "phase": "updated",
+        "round": 2,
+        "p_fraud": 0.9229,
+        "confidence": 0.7575,
+        "logged_at": "2026-09-24T13:01:00.622+00:00"
+      }
+    ],
+    "trace": [
+      {
+        "step": 1,
+        "node": "trigger",
+        "title": "Trigger: alert ingested",
+        "started_at": "2026-09-24T13:01:00.611+00:00",
+        "duration_ms": 0.01,
+        "summary": "ATO_NEW_DEVICE fired on T3100484 with risk score 0.66.",
+        "details": {
+          "alert": {
+            "case_id": "HHGOA-015",
+            "transaction_id": "T3100484",
+            "rule": "ATO_NEW_DEVICE",
+            "risk_score": 0.66,
+            "source": "hhgoa-risk-engine"
+          }
+        }
+      },
+      {
+        "step": 2,
+        "node": "investigate",
+        "title": "Investigate: GraphRAG evidence via TigerGraph MCP",
+        "started_at": "2026-09-24T13:01:00.611+00:00",
+        "duration_ms": 6.88,
+        "summary": "6 MCP tool calls (deterministic planner); pattern tags ['account_takeover']; 5 similar closed cases retrieved.",
+        "details": {
+          "tool_calls": [
+            {
+              "evidence_id": "EV-01",
+              "tool": "get_transaction_context",
+              "summary": "Txn T3100484 $500.00; device cards=1, IP cards=1, card 1h velocity=1, near-threshold 24h=0"
+            },
+            {
+              "evidence_id": "EV-02",
+              "tool": "get_customer_history",
+              "summary": "45 baseline txns, avg $102.57, 0 chargebacks, 1 known devices, countries ['US']"
+            },
+            {
+              "evidence_id": "EV-03",
+              "tool": "find_related_entities",
+              "summary": "2-hop neighbourhood of DEV-20060: Card=1, Customer=1, Device=1, IP=2, Transaction=46; fraud txns=0, confirmed cases=0"
+            },
+            {
+              "evidence_id": "EV-04",
+              "tool": "find_related_entities",
+              "summary": "2-hop neighbourhood of IP-40054: Card=1, Customer=1, Device=2, IP=1, Transaction=46; fraud txns=0, confirmed cases=0"
+            },
+            {
+              "evidence_id": "EV-05",
+              "tool": "find_related_entities",
+              "summary": "2-hop neighbourhood of CUST-30070: Card=1, Device=2, IP=2, Transaction=46; fraud txns=0, confirmed cases=0"
+            },
+            {
+              "evidence_id": "EV-06",
+              "tool": "find_similar_cases",
+              "summary": "5 similar closed cases for tags ['account_takeover']"
+            }
+          ]
+        }
+      },
+      {
+        "step": 3,
+        "node": "assess_uncertainty",
+        "title": "Assess uncertainty",
+        "started_at": "2026-09-24T13:01:00.619+00:00",
+        "duration_ms": 0.08,
+        "summary": "p_fraud=0.62, confidence=0.04 (coverage 0.57, conflict 0.89); 5 signals.",
+        "details": {
+          "assessment": {
+            "p_fraud": 0.6183,
+            "confidence": 0.0427,
+            "components": {
+              "prior_log_odds": 0.663,
+              "signal_log_odds": -0.181,
+              "decisiveness": 0.2366,
+              "evidence_coverage": 0.5714,
+              "signal_conflict": 0.8869
+            },
+            "required_verifications": [
+              "identity_verification"
+            ],
+            "missing_verifications": [
+              "identity_verification"
+            ],
+            "round": 0
+          },
+          "signals": [
+            {
+              "name": "new_device",
+              "contribution": 0.7
+            },
+            {
+              "name": "known_geo",
+              "contribution": -0.4
+            },
+            {
+              "name": "amount_anomaly",
+              "contribution": 0.479
+            },
+            {
+              "name": "established_customer",
+              "contribution": -1.2
+            },
+            {
+              "name": "similar_case_precedent",
+              "contribution": 0.24
+            }
+          ]
+        }
+      },
+      {
+        "step": 4,
+        "node": "next_best_action",
+        "title": "Next best action",
+        "started_at": "2026-09-24T13:01:00.619+00:00",
+        "duration_ms": 0.03,
+        "summary": "[initial] MONITOR_ACCOUNT_AND_REQUEST_STEP_UP_AUTH: Confidence 0.04 is below the 0.60 threshold (p_fraud 62%). Missing: identity_verification.",
+        "details": {
+          "nba": {
+            "action": "MONITOR_ACCOUNT_AND_REQUEST_STEP_UP_AUTH",
+            "label": "Monitor account + request step-up auth",
+            "terminal": false,
+            "rationale": "Confidence 0.04 is below the 0.60 threshold (p_fraud 62%). Missing: identity_verification.",
+            "key_drivers": [
+              "established_customer",
+              "new_device",
+              "amount_anomaly",
+              "known_geo"
+            ],
+            "evidence_request": "step_up_auth",
+            "phase": "initial",
+            "round": 0,
+            "p_fraud": 0.6183,
+            "confidence": 0.0427,
+            "logged_at": "2026-09-24T13:01:00.619+00:00"
+          }
+        }
+      },
+      {
+        "step": 5,
+        "node": "gather_more_evidence",
+        "title": "Gather more evidence",
+        "started_at": "2026-09-24T13:01:00.620+00:00",
+        "duration_ms": 0.02,
+        "summary": "Requested step_up_auth; received 1 item(s): SMS one-time passcode entered correctly (weak factor: SIM-bound).",
+        "details": {
+          "request": "step_up_auth",
+          "received": [
+            {
+              "evidence_id": "EV-07",
+              "label": "followup:step_up_auth",
+              "source": "step_up_auth",
+              "tool": null,
+              "summary": "SMS one-time passcode entered correctly (weak factor: SIM-bound).",
+              "graph_elements": [],
+              "category": "identity_verification",
+              "round": 1
+            }
+          ]
+        }
+      },
+      {
+        "step": 6,
+        "node": "assess_uncertainty",
+        "title": "Assess uncertainty",
+        "started_at": "2026-09-24T13:01:00.620+00:00",
+        "duration_ms": 0.07,
+        "summary": "p_fraud=0.37, confidence=0.17 (coverage 1.00, conflict 0.55); 6 signals.",
+        "details": {
+          "assessment": {
+            "p_fraud": 0.3734,
+            "confidence": 0.1714,
+            "components": {
+              "prior_log_odds": 0.663,
+              "signal_log_odds": -1.181,
+              "decisiveness": 0.2532,
+              "evidence_coverage": 1.0,
+              "signal_conflict": 0.5458
+            },
+            "required_verifications": [
+              "identity_verification"
+            ],
+            "missing_verifications": [],
+            "round": 1
+          },
+          "signals": [
+            {
+              "name": "new_device",
+              "contribution": 0.7
+            },
+            {
+              "name": "known_geo",
+              "contribution": -0.4
+            },
+            {
+              "name": "amount_anomaly",
+              "contribution": 0.479
+            },
+            {
+              "name": "established_customer",
+              "contribution": -1.2
+            },
+            {
+              "name": "similar_case_precedent",
+              "contribution": 0.24
+            },
+            {
+              "name": "sms_otp_passed",
+              "contribution": -1.0
+            }
+          ]
+        }
+      },
+      {
+        "step": 7,
+        "node": "next_best_action",
+        "title": "Next best action",
+        "started_at": "2026-09-24T13:01:00.620+00:00",
+        "duration_ms": 0.02,
+        "summary": "[updated] HOLD_AND_REQUEST_ANALYST_REVIEW: Confidence 0.17 is below the 0.60 threshold (p_fraud 37%). Missing: corroborating evidence.",
+        "details": {
+          "nba": {
+            "action": "HOLD_AND_REQUEST_ANALYST_REVIEW",
+            "label": "Hold funds + request analyst review",
+            "terminal": false,
+            "rationale": "Confidence 0.17 is below the 0.60 threshold (p_fraud 37%). Missing: corroborating evidence.",
+            "key_drivers": [
+              "established_customer",
+              "sms_otp_passed",
+              "new_device",
+              "amount_anomaly"
+            ],
+            "evidence_request": "analyst_review",
+            "phase": "updated",
+            "round": 1,
+            "p_fraud": 0.3734,
+            "confidence": 0.1714,
+            "logged_at": "2026-09-24T13:01:00.620+00:00"
+          }
+        }
+      },
+      {
+        "step": 8,
+        "node": "gather_more_evidence",
+        "title": "Gather more evidence",
+        "started_at": "2026-09-24T13:01:00.621+00:00",
+        "duration_ms": 0.02,
+        "summary": "Requested analyst_review; received 1 item(s): Carrier lookup: SIM swapped 2h before the OTP; OTP delivery was compromised.",
+        "details": {
+          "request": "analyst_review",
+          "received": [
+            {
+              "evidence_id": "EV-08",
+              "label": "followup:analyst_review",
+              "source": "telco_check",
+              "tool": null,
+              "summary": "Carrier lookup: SIM swapped 2h before the OTP; OTP delivery was compromised.",
+              "graph_elements": [],
+              "category": "analyst_review",
+              "round": 2
+            }
+          ]
+        }
+      },
+      {
+        "step": 9,
+        "node": "assess_uncertainty",
+        "title": "Assess uncertainty",
+        "started_at": "2026-09-24T13:01:00.622+00:00",
+        "duration_ms": 0.07,
+        "summary": "p_fraud=0.92, confidence=0.76 (coverage 1.00, conflict 0.59); 7 signals.",
+        "details": {
+          "assessment": {
+            "p_fraud": 0.9229,
+            "confidence": 0.7575,
+            "components": {
+              "prior_log_odds": 0.663,
+              "signal_log_odds": 1.819,
+              "decisiveness": 0.8458,
+              "evidence_coverage": 1.0,
+              "signal_conflict": 0.5884
+            },
+            "required_verifications": [
+              "identity_verification"
+            ],
+            "missing_verifications": [],
+            "round": 2
+          },
+          "signals": [
+            {
+              "name": "new_device",
+              "contribution": 0.7
+            },
+            {
+              "name": "known_geo",
+              "contribution": -0.4
+            },
+            {
+              "name": "amount_anomaly",
+              "contribution": 0.479
+            },
+            {
+              "name": "established_customer",
+              "contribution": -1.2
+            },
+            {
+              "name": "similar_case_precedent",
+              "contribution": 0.24
+            },
+            {
+              "name": "sms_otp_passed",
+              "contribution": -1.0
+            },
+            {
+              "name": "sim_swap_detected",
+              "contribution": 3.0
+            }
+          ]
+        }
+      },
+      {
+        "step": 10,
+        "node": "next_best_action",
+        "title": "Next best action",
+        "started_at": "2026-09-24T13:01:00.622+00:00",
+        "duration_ms": 0.02,
+        "summary": "[updated] BLOCK_TRANSACTION: Fraud probability 92% with confidence 0.76, at or above the 0.60 threshold.",
+        "details": {
+          "nba": {
+            "action": "BLOCK_TRANSACTION",
+            "label": "Block transaction & reissue card",
+            "terminal": true,
+            "rationale": "Fraud probability 92% with confidence 0.76, at or above the 0.60 threshold.",
+            "key_drivers": [
+              "sim_swap_detected",
+              "established_customer",
+              "sms_otp_passed",
+              "new_device"
+            ],
+            "evidence_request": null,
+            "phase": "updated",
+            "round": 2,
+            "p_fraud": 0.9229,
+            "confidence": 0.7575,
+            "logged_at": "2026-09-24T13:01:00.622+00:00"
+          }
+        }
+      },
+      {
+        "step": 11,
+        "node": "update_case_memory",
+        "title": "Update case memory",
+        "started_at": "2026-09-24T13:01:00.623+00:00",
+        "duration_ms": 0.86,
+        "summary": "Case HHGOA-015 written back to graph as closed (BLOCK_TRANSACTION).",
+        "details": {
+          "memory": {
+            "status": "closed",
+            "outcome": "confirmed_fraud",
+            "decision": "BLOCK_TRANSACTION",
+            "confidence": 0.7575,
+            "summary": "Fraud probability 92% with confidence 0.76, at or above the 0.60 threshold.",
+            "pattern_tags": [
+              "account_takeover"
+            ],
+            "sar_filed": false,
+            "evidence_ids": [
+              "EV-01",
+              "EV-02",
+              "EV-06",
+              "EV-07",
+              "EV-08"
+            ],
+            "closed_ts": 29000000
+          }
+        }
+      }
+    ],
+    "mcp_tool_calls": [
+      {
+        "call_id": "mcp-099",
+        "tool": "get_transaction_context",
+        "arguments": {
+          "transaction_id": "T3100484"
+        },
+        "ok": true,
+        "latency_ms": 1.19,
+        "error": null
+      },
+      {
+        "call_id": "mcp-100",
+        "tool": "get_customer_history",
+        "arguments": {
+          "customer_id": "CUST-30070",
+          "as_of_ts": 29000000
+        },
+        "ok": true,
+        "latency_ms": 0.99,
+        "error": null
+      },
+      {
+        "call_id": "mcp-101",
+        "tool": "find_related_entities",
+        "arguments": {
+          "entity_id": "DEV-20060",
+          "hops": 2,
+          "as_of_ts": 29000000
+        },
+        "ok": true,
+        "latency_ms": 1.14,
+        "error": null
+      },
+      {
+        "call_id": "mcp-102",
+        "tool": "find_related_entities",
+        "arguments": {
+          "entity_id": "IP-40054",
+          "hops": 2,
+          "as_of_ts": 29000000
+        },
+        "ok": true,
+        "latency_ms": 1.05,
+        "error": null
+      },
+      {
+        "call_id": "mcp-103",
+        "tool": "find_related_entities",
+        "arguments": {
+          "entity_id": "CUST-30070",
+          "hops": 2,
+          "as_of_ts": 29000000
+        },
+        "ok": true,
+        "latency_ms": 1.15,
+        "error": null
+      },
+      {
+        "call_id": "mcp-104",
+        "tool": "find_similar_cases",
+        "arguments": {
+          "transaction_id": "T3100484",
+          "pattern_tags": [
+            "account_takeover"
+          ],
+          "k": 5
+        },
+        "ok": true,
+        "latency_ms": 1.14,
+        "error": null
+      },
+      {
+        "call_id": "mcp-105",
+        "tool": "update_case_memory",
+        "arguments": {
+          "case_id": "HHGOA-015",
+          "memory": {
+            "status": "closed",
+            "outcome": "confirmed_fraud",
+            "decision": "BLOCK_TRANSACTION",
+            "confidence": 0.7575,
+            "summary": "Fraud probability 92% with confidence 0.76, at or above the 0.60 threshold.",
+            "pattern_tags": [
+              "account_takeover"
+            ],
+            "sar_filed": false,
+            "evidence_ids": [
+              "EV-01",
+              "EV-02",
+              "EV-06",
+              "EV-07",
+              "EV-08"
+            ],
+            "closed_ts": 29000000
+          }
+        },
+        "ok": true,
+        "latency_ms": 0.82,
+        "error": null
+      }
+    ],
+    "graph_context": {
+      "transaction": {
+        "id": "T3100484",
+        "type": "Transaction",
+        "amount": 500.0,
+        "ts": 29000000,
+        "product_cd": "W",
+        "is_fraud": -1,
+        "chargeback": false
+      },
+      "card": {
+        "id": "CARD-10071",
+        "type": "Card",
+        "card1": 1186,
+        "card4": "visa",
+        "card6": "debit",
+        "issuer_country": "US"
+      },
+      "device": {
+        "id": "DEV-20060",
+        "type": "Device",
+        "device_type": "mobile",
+        "device_info": "SM-A515F"
+      },
+      "ip": {
+        "id": "IP-40054",
+        "type": "IP",
+        "country": "US",
+        "is_proxy": false,
+        "asn": "AS21928"
+      },
+      "customer": {
+        "id": "CUST-30070",
+        "type": "Customer",
+        "tenure_days": 1500,
+        "addr1": 363,
+        "p_emaildomain": "gmail.com",
+        "kyc_level": "standard",
+        "segment": "retail"
+      },
+      "stats": {
+        "device_distinct_cards": 1,
+        "device_distinct_customers": 1,
+        "device_cards": [
+          "CARD-10071"
+        ],
+        "ip_distinct_cards": 1,
+        "ip_distinct_customers": 1,
+        "ip_cards_1h": 1,
+        "card_txn_count_1h": 1,
+        "card_amount_1h": 500.0,
+        "card_countries_1h": [
+          "US"
+        ],
+        "customer_txn_count_24h": 1,
+        "customer_amount_24h": 500.0,
+        "near_threshold_count_24h": 0,
+        "fraud_labeled_neighbor_txns": []
+      },
+      "customer_history": {
+        "cards": [
+          "CARD-10071"
+        ],
+        "txn_count": 45,
+        "avg_amount": 102.57,
+        "max_amount": 166.12,
+        "chargeback_count": 0,
+        "known_device_ids": [
+          "DEV-20059"
+        ],
+        "known_ip_countries": [
+          "US"
+        ],
+        "days_since_last_txn": 5.9,
+        "prior_cases": []
+      },
+      "neighbourhoods": {
+        "related_device": {
+          "root": "DEV-20060",
+          "counts": {
+            "Card": 1,
+            "Customer": 1,
+            "Device": 1,
+            "IP": 2,
+            "Transaction": 46
+          },
+          "fraud_transactions": [],
+          "confirmed_fraud_cases": []
+        },
+        "related_ip": {
+          "root": "IP-40054",
+          "counts": {
+            "Card": 1,
+            "Customer": 1,
+            "Device": 2,
+            "IP": 1,
+            "Transaction": 46
+          },
+          "fraud_transactions": [],
+          "confirmed_fraud_cases": []
+        },
+        "related_customer": {
+          "root": "CUST-30070",
+          "counts": {
+            "Card": 1,
+            "Device": 2,
+            "IP": 2,
+            "Transaction": 46
+          },
+          "fraud_transactions": [],
+          "confirmed_fraud_cases": []
+        }
+      },
+      "similar_cases": [
+        {
+          "case_id": "CASE-H010",
+          "similarity": 0.6,
+          "pattern_tags": [
+            "account_takeover"
+          ],
+          "outcome": "confirmed_fraud",
+          "decision": "BLOCK_TRANSACTION",
+          "summary": "Credential-stuffed account used from a proxy.",
+          "shared_entities": []
+        },
+        {
+          "case_id": "CASE-H012",
+          "similarity": 0.6,
+          "pattern_tags": [
+            "account_takeover"
+          ],
+          "outcome": "false_positive",
+          "decision": "ALLOW_TRANSACTION",
+          "summary": "Customer bought a new phone before a holiday purchase.",
+          "shared_entities": []
+        },
+        {
+          "case_id": "HHGOA-003",
+          "similarity": 0.6,
+          "pattern_tags": [
+            "account_takeover"
+          ],
+          "outcome": "confirmed_fraud",
+          "decision": "BLOCK_TRANSACTION",
+          "summary": "Fraud probability 99% with confidence 0.94, at or above the 0.60 threshold.",
+          "shared_entities": []
+        },
+        {
+          "case_id": "CASE-H008",
+          "similarity": 0.3,
+          "pattern_tags": [
+            "account_takeover",
+            "velocity_burst"
+          ],
+          "outcome": "confirmed_fraud",
+          "decision": "BLOCK_TRANSACTION",
+          "summary": "Card tested then drained from a new device.",
+          "shared_entities": []
+        },
+        {
+          "case_id": "CASE-H011",
+          "similarity": 0.3,
+          "pattern_tags": [
+            "account_takeover",
+            "geo_anomaly"
+          ],
+          "outcome": "confirmed_fraud",
+          "decision": "BLOCK_TRANSACTION",
+          "summary": "Takeover from overseas after phishing.",
+          "shared_entities": []
+        }
+      ],
+      "view": {
+        "nodes": [
+          {
+            "id": "T3100484",
+            "type": "Transaction",
+            "label": "T3100484 ($500)",
+            "role": "focal",
+            "flagged": true
+          },
+          {
+            "id": "CARD-10071",
+            "type": "Card",
+            "label": "CARD-10071",
+            "role": "context",
+            "flagged": false
+          },
+          {
+            "id": "DEV-20060",
+            "type": "Device",
+            "label": "DEV-20060 (SM-A515F)",
+            "role": "context",
+            "flagged": true
+          },
+          {
+            "id": "IP-40054",
+            "type": "IP",
+            "label": "IP-40054 (US)",
+            "role": "context",
+            "flagged": false
+          },
+          {
+            "id": "CUST-30070",
+            "type": "Customer",
+            "label": "CUST-30070",
+            "role": "context",
+            "flagged": true
+          },
+          {
+            "id": "CASE-H010",
+            "type": "Case",
+            "label": "CASE-H010 (confirmed_fraud)",
+            "role": "memory",
+            "flagged": true
+          },
+          {
+            "id": "CASE-H012",
+            "type": "Case",
+            "label": "CASE-H012 (false_positive)",
+            "role": "memory",
+            "flagged": false
+          },
+          {
+            "id": "HHGOA-003",
+            "type": "Case",
+            "label": "HHGOA-003 (confirmed_fraud)",
+            "role": "memory",
+            "flagged": true
+          }
+        ],
+        "edges": [
+          {
+            "source": "T3100484",
+            "target": "CARD-10071",
+            "type": "PAID_WITH"
+          },
+          {
+            "source": "T3100484",
+            "target": "DEV-20060",
+            "type": "USED_DEVICE"
+          },
+          {
+            "source": "T3100484",
+            "target": "IP-40054",
+            "type": "FROM_IP"
+          },
+          {
+            "source": "T3100484",
+            "target": "CUST-30070",
+            "type": "PLACED_BY"
+          },
+          {
+            "source": "T3100484",
+            "target": "CASE-H010",
+            "type": "SIMILAR_TO"
+          },
+          {
+            "source": "T3100484",
+            "target": "CASE-H012",
+            "type": "SIMILAR_TO"
+          },
+          {
+            "source": "T3100484",
+            "target": "HHGOA-003",
+            "type": "SIMILAR_TO"
+          }
+        ]
+      }
+    }
+  },
+  "nba_before_additional_evidence": {
+    "action": "MONITOR_ACCOUNT_AND_REQUEST_STEP_UP_AUTH",
+    "label": "Monitor account + request step-up auth",
+    "terminal": false,
+    "rationale": "Confidence 0.04 is below the 0.60 threshold (p_fraud 62%). Missing: identity_verification.",
+    "key_drivers": [
+      "established_customer",
+      "new_device",
+      "amount_anomaly",
+      "known_geo"
+    ],
+    "evidence_request": "step_up_auth",
+    "phase": "initial",
+    "round": 0,
+    "p_fraud": 0.6183,
+    "confidence": 0.0427,
+    "logged_at": "2026-09-24T13:01:00.619+00:00"
+  },
+  "additional_evidence_requested": true,
+  "additional_evidence": [
+    {
+      "category": "identity_verification",
+      "source": "step_up_auth",
+      "signal": "sms_otp_passed",
+      "weight": -1.0,
+      "strength": 1.0,
+      "description": "SMS one-time passcode entered correctly (weak factor: SIM-bound).",
+      "evidence_id": "EV-07"
+    },
+    {
+      "category": "analyst_review",
+      "source": "telco_check",
+      "signal": "sim_swap_detected",
+      "weight": 3.0,
+      "strength": 1.0,
+      "description": "Carrier lookup: SIM swapped 2h before the OTP; OTP delivery was compromised.",
+      "evidence_id": "EV-08"
+    }
+  ],
+  "nba_after_additional_evidence": {
+    "action": "BLOCK_TRANSACTION",
+    "label": "Block transaction & reissue card",
+    "terminal": true,
+    "rationale": "Fraud probability 92% with confidence 0.76, at or above the 0.60 threshold.",
+    "key_drivers": [
+      "sim_swap_detected",
+      "established_customer",
+      "sms_otp_passed",
+      "new_device"
+    ],
+    "evidence_request": null,
+    "phase": "updated",
+    "round": 2,
+    "p_fraud": 0.9229,
+    "confidence": 0.7575,
+    "logged_at": "2026-09-24T13:01:00.622+00:00"
+  },
+  "final_decision": {
+    "action": "BLOCK_TRANSACTION",
+    "label": "Block transaction & reissue card",
+    "p_fraud": 0.9229,
+    "confidence": 0.7575,
+    "rationale": "Fraud probability 92% with confidence 0.76, at or above the 0.60 threshold.",
+    "justification": [
+      {
+        "name": "sim_swap_detected",
+        "direction": "fraud",
+        "contribution": 3.0,
+        "description": "Carrier lookup: SIM swapped 2h before the OTP; OTP delivery was compromised.",
+        "evidence_ids": [
+          "EV-08"
+        ],
+        "graph_elements": []
+      },
+      {
+        "name": "established_customer",
+        "direction": "legitimate",
+        "contribution": -1.2,
+        "description": "Customer tenure 1500 days, 45 clean transactions, no chargebacks.",
+        "evidence_ids": [
+          "EV-02"
+        ],
+        "graph_elements": [
+          "CUST-30070"
+        ]
+      },
+      {
+        "name": "sms_otp_passed",
+        "direction": "legitimate",
+        "contribution": -1.0,
+        "description": "SMS one-time passcode entered correctly (weak factor: SIM-bound).",
+        "evidence_ids": [
+          "EV-07"
+        ],
+        "graph_elements": []
+      },
+      {
+        "name": "new_device",
+        "direction": "fraud",
+        "contribution": 0.7,
+        "description": "Device DEV-20060 has never been used by customer CUST-30070 (known devices: DEV-20059).",
+        "evidence_ids": [
+          "EV-02",
+          "EV-01"
+        ],
+        "graph_elements": [
+          "DEV-20060",
+          "CUST-30070"
+        ]
+      },
+      {
+        "name": "amount_anomaly",
+        "direction": "fraud",
+        "contribution": 0.479,
+        "description": "$500.00 is 4.9x the customer's average of $102.57.",
+        "evidence_ids": [
+          "EV-02",
+          "EV-01"
+        ],
+        "graph_elements": [
+          "T3100484",
+          "CUST-30070"
+        ]
+      },
+      {
+        "name": "known_geo",
+        "direction": "legitimate",
+        "contribution": -0.4,
+        "description": "US matches the customer's usual locations.",
+        "evidence_ids": [
+          "EV-02"
+        ],
+        "graph_elements": [
+          "IP-40054"
+        ]
+      },
+      {
+        "name": "similar_case_precedent",
+        "direction": "fraud",
+        "contribution": 0.24,
+        "description": "Closest closed cases: CASE-H010 (confirmed_fraud, sim 0.60), CASE-H012 (false_positive, sim 0.60), HHGOA-003 (confirmed_fraud, sim 0.60); 67% similarity-weighted fraud rate.",
+        "evidence_ids": [
+          "EV-06"
+        ],
+        "graph_elements": [
+          "CASE-H010",
+          "CASE-H012",
+          "HHGOA-003"
+        ]
+      }
+    ],
+    "evidence_cited": [
+      {
+        "evidence_id": "EV-01",
+        "label": "context",
+        "source": "tigergraph-mcp",
+        "tool": "get_transaction_context",
+        "mcp_call_id": "mcp-099",
+        "arguments": {
+          "transaction_id": "T3100484"
+        },
+        "latency_ms": 1.19,
+        "origin": "playbook",
+        "summary": "Txn T3100484 $500.00; device cards=1, IP cards=1, card 1h velocity=1, near-threshold 24h=0",
+        "graph_elements": [
+          "T3100484",
+          "CARD-10071",
+          "DEV-20060",
+          "IP-40054",
+          "CUST-30070"
+        ]
+      },
+      {
+        "evidence_id": "EV-02",
+        "label": "history",
+        "source": "tigergraph-mcp",
+        "tool": "get_customer_history",
+        "mcp_call_id": "mcp-100",
+        "arguments": {
+          "customer_id": "CUST-30070",
+          "as_of_ts": 29000000
+        },
+        "latency_ms": 0.99,
+        "origin": "playbook",
+        "summary": "45 baseline txns, avg $102.57, 0 chargebacks, 1 known devices, countries ['US']",
+        "graph_elements": [
+          "CUST-30070",
+          "DEV-20059"
+        ]
+      },
+      {
+        "evidence_id": "EV-06",
+        "label": "similar",
+        "source": "tigergraph-mcp",
+        "tool": "find_similar_cases",
+        "mcp_call_id": "mcp-104",
+        "arguments": {
+          "transaction_id": "T3100484",
+          "pattern_tags": [
+            "account_takeover"
+          ],
+          "k": 5
+        },
+        "latency_ms": 1.14,
+        "origin": "deterministic",
+        "summary": "5 similar closed cases for tags ['account_takeover']",
+        "graph_elements": [
+          "CASE-H010",
+          "CASE-H012",
+          "HHGOA-003",
+          "CASE-H008",
+          "CASE-H011"
+        ]
+      },
+      {
+        "evidence_id": "EV-07",
+        "label": "followup:step_up_auth",
+        "source": "step_up_auth",
+        "tool": null,
+        "summary": "SMS one-time passcode entered correctly (weak factor: SIM-bound).",
+        "graph_elements": [],
+        "category": "identity_verification",
+        "round": 1
+      },
+      {
+        "evidence_id": "EV-08",
+        "label": "followup:analyst_review",
+        "source": "telco_check",
+        "tool": null,
+        "summary": "Carrier lookup: SIM swapped 2h before the OTP; OTP delivery was compromised.",
+        "graph_elements": [],
+        "category": "analyst_review",
+        "round": 2
+      }
+    ],
+    "similar_cases": [
+      {
+        "case_id": "CASE-H010",
+        "similarity": 0.6,
+        "pattern_tags": [
+          "account_takeover"
+        ],
+        "outcome": "confirmed_fraud",
+        "decision": "BLOCK_TRANSACTION",
+        "summary": "Credential-stuffed account used from a proxy.",
+        "shared_entities": []
+      },
+      {
+        "case_id": "CASE-H012",
+        "similarity": 0.6,
+        "pattern_tags": [
+          "account_takeover"
+        ],
+        "outcome": "false_positive",
+        "decision": "ALLOW_TRANSACTION",
+        "summary": "Customer bought a new phone before a holiday purchase.",
+        "shared_entities": []
+      },
+      {
+        "case_id": "HHGOA-003",
+        "similarity": 0.6,
+        "pattern_tags": [
+          "account_takeover"
+        ],
+        "outcome": "confirmed_fraud",
+        "decision": "BLOCK_TRANSACTION",
+        "summary": "Fraud probability 99% with confidence 0.94, at or above the 0.60 threshold.",
+        "shared_entities": []
+      }
+    ],
+    "sar_required": false
+  },
+  "sar": {
+    "required": false,
+    "narrative": null
+  },
+  "case_memory_write": {
+    "case_id": "HHGOA-015",
+    "written": [
+      "closed_ts",
+      "confidence",
+      "decision",
+      "evidence_ids",
+      "outcome",
+      "pattern_tags",
+      "sar_filed",
+      "status",
+      "summary"
+    ],
+    "backend": "mock",
+    "memory": {
+      "status": "closed",
+      "outcome": "confirmed_fraud",
+      "decision": "BLOCK_TRANSACTION",
+      "confidence": 0.7575,
+      "summary": "Fraud probability 92% with confidence 0.76, at or above the 0.60 threshold.",
+      "pattern_tags": [
+        "account_takeover"
+      ],
+      "sar_filed": false,
+      "evidence_ids": [
+        "EV-01",
+        "EV-02",
+        "EV-06",
+        "EV-07",
+        "EV-08"
+      ],
+      "closed_ts": 29000000
+    }
+  },
+  "benchmark": {
+    "expected_initial_terminal": false,
+    "expected_final_action": "BLOCK_TRANSACTION",
+    "passed": true
+  }
+}

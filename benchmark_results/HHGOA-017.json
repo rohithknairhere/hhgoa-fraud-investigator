@@ -1,0 +1,1431 @@
+{
+  "case_id": "HHGOA-017",
+  "title": "Second new card on the HHGOA-001 ring handset",
+  "typology": "device_ring",
+  "generated_at": "2026-09-24T13:01:00+00:00",
+  "graph_backend": "mock",
+  "planner": "deterministic",
+  "alert": {
+    "case_id": "HHGOA-017",
+    "transaction_id": "T3100526",
+    "rule": "DEVICE_MULTI_CARD",
+    "risk_score": 0.86,
+    "source": "hhgoa-risk-engine"
+  },
+  "investigation_record": {
+    "transaction_id": "T3100526",
+    "customer_id": "CUST-30072",
+    "pattern_tags": [
+      "device_sharing",
+      "ip_cluster",
+      "new_customer"
+    ],
+    "evidence": [
+      {
+        "evidence_id": "EV-01",
+        "label": "context",
+        "source": "tigergraph-mcp",
+        "tool": "get_transaction_context",
+        "mcp_call_id": "mcp-113",
+        "arguments": {
+          "transaction_id": "T3100526"
+        },
+        "latency_ms": 1.02,
+        "origin": "playbook",
+        "summary": "Txn T3100526 $1,320.00; device cards=8, IP cards=8, card 1h velocity=1, near-threshold 24h=0",
+        "graph_elements": [
+          "T3100526",
+          "CARD-10073",
+          "DEV-20034",
+          "IP-40034",
+          "CUST-30072"
+        ]
+      },
+      {
+        "evidence_id": "EV-02",
+        "label": "history",
+        "source": "tigergraph-mcp",
+        "tool": "get_customer_history",
+        "mcp_call_id": "mcp-114",
+        "arguments": {
+          "customer_id": "CUST-30072",
+          "as_of_ts": 31000000
+        },
+        "latency_ms": 0.62,
+        "origin": "playbook",
+        "summary": "0 baseline txns, avg $0.00, 0 chargebacks, 0 known devices, countries []",
+        "graph_elements": [
+          "CUST-30072"
+        ]
+      },
+      {
+        "evidence_id": "EV-03",
+        "label": "related_device",
+        "source": "tigergraph-mcp",
+        "tool": "find_related_entities",
+        "mcp_call_id": "mcp-115",
+        "arguments": {
+          "entity_id": "DEV-20034",
+          "hops": 2,
+          "as_of_ts": 31000000
+        },
+        "latency_ms": 0.92,
+        "origin": "playbook",
+        "summary": "2-hop neighbourhood of DEV-20034: Card=8, Case=2, Customer=8, IP=1, Transaction=8; fraud txns=3, confirmed cases=2",
+        "graph_elements": [
+          "DEV-20034",
+          "T3100034",
+          "T3100035",
+          "T3100036",
+          "CASE-H900",
+          "HHGOA-001"
+        ]
+      },
+      {
+        "evidence_id": "EV-04",
+        "label": "related_ip",
+        "source": "tigergraph-mcp",
+        "tool": "find_related_entities",
+        "mcp_call_id": "mcp-116",
+        "arguments": {
+          "entity_id": "IP-40034",
+          "hops": 2,
+          "as_of_ts": 31000000
+        },
+        "latency_ms": 0.88,
+        "origin": "playbook",
+        "summary": "2-hop neighbourhood of IP-40034: Card=8, Case=2, Customer=8, Device=1, Transaction=8; fraud txns=3, confirmed cases=2",
+        "graph_elements": [
+          "IP-40034",
+          "T3100034",
+          "T3100035",
+          "T3100036",
+          "CASE-H900",
+          "HHGOA-001"
+        ]
+      },
+      {
+        "evidence_id": "EV-05",
+        "label": "related_customer",
+        "source": "tigergraph-mcp",
+        "tool": "find_related_entities",
+        "mcp_call_id": "mcp-117",
+        "arguments": {
+          "entity_id": "CUST-30072",
+          "hops": 2,
+          "as_of_ts": 31000000
+        },
+        "latency_ms": 0.94,
+        "origin": "playbook",
+        "summary": "2-hop neighbourhood of CUST-30072: Card=1, Customer=7, Device=1, IP=1, Transaction=8; fraud txns=3, confirmed cases=0",
+        "graph_elements": [
+          "CUST-30072",
+          "T3100034",
+          "T3100035",
+          "T3100036"
+        ]
+      },
+      {
+        "evidence_id": "EV-06",
+        "label": "similar",
+        "source": "tigergraph-mcp",
+        "tool": "find_similar_cases",
+        "mcp_call_id": "mcp-118",
+        "arguments": {
+          "transaction_id": "T3100526",
+          "pattern_tags": [
+            "device_sharing",
+            "ip_cluster",
+            "new_customer"
+          ],
+          "k": 5
+        },
+        "latency_ms": 0.95,
+        "origin": "deterministic",
+        "summary": "5 similar closed cases for tags ['device_sharing', 'ip_cluster', 'new_customer']",
+        "graph_elements": [
+          "HHGOA-001",
+          "CASE-H900",
+          "HHGOA-014",
+          "CASE-H002",
+          "CASE-H006"
+        ]
+      }
+    ],
+    "signals": [
+      {
+        "name": "device_sharing",
+        "weight": 2.2,
+        "strength": 1.0,
+        "contribution": 2.2,
+        "direction": "fraud",
+        "needs_verification": "relationship_validation",
+        "pattern_tag": "device_sharing",
+        "description": "Device DEV-20034 (SM-G960U) has been used by 8 distinct cards across 8 customers.",
+        "evidence_ids": [
+          "EV-01",
+          "EV-03"
+        ],
+        "graph_elements": [
+          "DEV-20034",
+          "CARD-10034",
+          "CARD-10035",
+          "CARD-10036",
+          "CARD-10037",
+          "CARD-10038",
+          "CARD-10039",
+          "CARD-10040",
+          "CARD-10073"
+        ]
+      },
+      {
+        "name": "ip_cluster",
+        "weight": 1.8,
+        "strength": 1.0,
+        "contribution": 1.8,
+        "direction": "fraud",
+        "needs_verification": null,
+        "pattern_tag": "ip_cluster",
+        "description": "IP IP-40034 (RO, AS9009) is shared by 8 cards / 8 customers.",
+        "evidence_ids": [
+          "EV-01",
+          "EV-04"
+        ],
+        "graph_elements": [
+          "IP-40034"
+        ]
+      },
+      {
+        "name": "proxy_ip",
+        "weight": 0.8,
+        "strength": 1.0,
+        "contribution": 0.8,
+        "direction": "fraud",
+        "needs_verification": "identity_verification",
+        "pattern_tag": null,
+        "description": "Transaction routed through proxy/hosting ASN AS9009 (RO).",
+        "evidence_ids": [
+          "EV-01"
+        ],
+        "graph_elements": [
+          "IP-40034"
+        ]
+      },
+      {
+        "name": "new_customer",
+        "weight": 0.5,
+        "strength": 1.0,
+        "contribution": 0.5,
+        "direction": "fraud",
+        "needs_verification": "identity_verification",
+        "pattern_tag": "new_customer",
+        "description": "Customer CUST-30072 is 4 days old with no prior baseline.",
+        "evidence_ids": [
+          "EV-01",
+          "EV-02"
+        ],
+        "graph_elements": [
+          "CUST-30072"
+        ]
+      },
+      {
+        "name": "fraud_neighbourhood",
+        "weight": 1.8,
+        "strength": 1.0,
+        "contribution": 1.8,
+        "direction": "fraud",
+        "needs_verification": null,
+        "pattern_tag": null,
+        "description": "3 fraud-labelled transactions and 2 confirmed fraud cases within two hops of this transaction's card/device/IP.",
+        "evidence_ids": [
+          "EV-01",
+          "EV-03",
+          "EV-04",
+          "EV-05"
+        ],
+        "graph_elements": [
+          "CASE-H900",
+          "HHGOA-001",
+          "T3100034",
+          "T3100035",
+          "T3100036"
+        ]
+      },
+      {
+        "name": "similar_case_precedent",
+        "weight": 1.2,
+        "strength": 0.75,
+        "contribution": 0.9,
+        "direction": "fraud",
+        "needs_verification": null,
+        "pattern_tag": null,
+        "description": "Closest closed cases: HHGOA-001 (confirmed_fraud, sim 1.00), CASE-H900 (confirmed_fraud, sim 0.80), HHGOA-014 (confirmed_fraud, sim 0.45); 100% similarity-weighted fraud rate.",
+        "evidence_ids": [
+          "EV-06"
+        ],
+        "graph_elements": [
+          "HHGOA-001",
+          "CASE-H900",
+          "HHGOA-014"
+        ]
+      }
+    ],
+    "assessments": [
+      {
+        "p_fraud": 0.9999,
+        "confidence": 0.6399,
+        "components": {
+          "prior_log_odds": 1.815,
+          "signal_log_odds": 8.0,
+          "decisiveness": 0.9999,
+          "evidence_coverage": 0.4,
+          "signal_conflict": 0.0
+        },
+        "required_verifications": [
+          "identity_verification",
+          "relationship_validation"
+        ],
+        "missing_verifications": [
+          "identity_verification",
+          "relationship_validation"
+        ],
+        "round": 0
+      }
+    ],
+    "nba_log": [
+      {
+        "action": "BLOCK_AND_FILE_SAR",
+        "label": "Block, freeze account & file SAR",
+        "terminal": true,
+        "rationale": "Fraud probability 100% with confidence 0.64, at or above the 0.60 threshold.",
+        "key_drivers": [
+          "device_sharing",
+          "ip_cluster",
+          "fraud_neighbourhood",
+          "similar_case_precedent"
+        ],
+        "evidence_request": null,
+        "phase": "initial",
+        "round": 0,
+        "p_fraud": 0.9999,
+        "confidence": 0.6399,
+        "logged_at": "2026-09-24T13:01:00.648+00:00"
+      }
+    ],
+    "trace": [
+      {
+        "step": 1,
+        "node": "trigger",
+        "title": "Trigger: alert ingested",
+        "started_at": "2026-09-24T13:01:00.640+00:00",
+        "duration_ms": 0.01,
+        "summary": "DEVICE_MULTI_CARD fired on T3100526 with risk score 0.86.",
+        "details": {
+          "alert": {
+            "case_id": "HHGOA-017",
+            "transaction_id": "T3100526",
+            "rule": "DEVICE_MULTI_CARD",
+            "risk_score": 0.86,
+            "source": "hhgoa-risk-engine"
+          }
+        }
+      },
+      {
+        "step": 2,
+        "node": "investigate",
+        "title": "Investigate: GraphRAG evidence via TigerGraph MCP",
+        "started_at": "2026-09-24T13:01:00.641+00:00",
+        "duration_ms": 5.53,
+        "summary": "6 MCP tool calls (deterministic planner); pattern tags ['device_sharing', 'ip_cluster', 'new_customer']; 5 similar closed cases retrieved.",
+        "details": {
+          "tool_calls": [
+            {
+              "evidence_id": "EV-01",
+              "tool": "get_transaction_context",
+              "summary": "Txn T3100526 $1,320.00; device cards=8, IP cards=8, card 1h velocity=1, near-threshold 24h=0"
+            },
+            {
+              "evidence_id": "EV-02",
+              "tool": "get_customer_history",
+              "summary": "0 baseline txns, avg $0.00, 0 chargebacks, 0 known devices, countries []"
+            },
+            {
+              "evidence_id": "EV-03",
+              "tool": "find_related_entities",
+              "summary": "2-hop neighbourhood of DEV-20034: Card=8, Case=2, Customer=8, IP=1, Transaction=8; fraud txns=3, confirmed cases=2"
+            },
+            {
+              "evidence_id": "EV-04",
+              "tool": "find_related_entities",
+              "summary": "2-hop neighbourhood of IP-40034: Card=8, Case=2, Customer=8, Device=1, Transaction=8; fraud txns=3, confirmed cases=2"
+            },
+            {
+              "evidence_id": "EV-05",
+              "tool": "find_related_entities",
+              "summary": "2-hop neighbourhood of CUST-30072: Card=1, Customer=7, Device=1, IP=1, Transaction=8; fraud txns=3, confirmed cases=0"
+            },
+            {
+              "evidence_id": "EV-06",
+              "tool": "find_similar_cases",
+              "summary": "5 similar closed cases for tags ['device_sharing', 'ip_cluster', 'new_customer']"
+            }
+          ]
+        }
+      },
+      {
+        "step": 3,
+        "node": "assess_uncertainty",
+        "title": "Assess uncertainty",
+        "started_at": "2026-09-24T13:01:00.647+00:00",
+        "duration_ms": 0.11,
+        "summary": "p_fraud=1.00, confidence=0.64 (coverage 0.40, conflict 0.00); 6 signals.",
+        "details": {
+          "assessment": {
+            "p_fraud": 0.9999,
+            "confidence": 0.6399,
+            "components": {
+              "prior_log_odds": 1.815,
+              "signal_log_odds": 8.0,
+              "decisiveness": 0.9999,
+              "evidence_coverage": 0.4,
+              "signal_conflict": 0.0
+            },
+            "required_verifications": [
+              "identity_verification",
+              "relationship_validation"
+            ],
+            "missing_verifications": [
+              "identity_verification",
+              "relationship_validation"
+            ],
+            "round": 0
+          },
+          "signals": [
+            {
+              "name": "device_sharing",
+              "contribution": 2.2
+            },
+            {
+              "name": "ip_cluster",
+              "contribution": 1.8
+            },
+            {
+              "name": "proxy_ip",
+              "contribution": 0.8
+            },
+            {
+              "name": "new_customer",
+              "contribution": 0.5
+            },
+            {
+              "name": "fraud_neighbourhood",
+              "contribution": 1.8
+            },
+            {
+              "name": "similar_case_precedent",
+              "contribution": 0.9
+            }
+          ]
+        }
+      },
+      {
+        "step": 4,
+        "node": "next_best_action",
+        "title": "Next best action",
+        "started_at": "2026-09-24T13:01:00.648+00:00",
+        "duration_ms": 0.03,
+        "summary": "[initial] BLOCK_AND_FILE_SAR: Fraud probability 100% with confidence 0.64, at or above the 0.60 threshold.",
+        "details": {
+          "nba": {
+            "action": "BLOCK_AND_FILE_SAR",
+            "label": "Block, freeze account & file SAR",
+            "terminal": true,
+            "rationale": "Fraud probability 100% with confidence 0.64, at or above the 0.60 threshold.",
+            "key_drivers": [
+              "device_sharing",
+              "ip_cluster",
+              "fraud_neighbourhood",
+              "similar_case_precedent"
+            ],
+            "evidence_request": null,
+            "phase": "initial",
+            "round": 0,
+            "p_fraud": 0.9999,
+            "confidence": 0.6399,
+            "logged_at": "2026-09-24T13:01:00.648+00:00"
+          }
+        }
+      },
+      {
+        "step": 5,
+        "node": "update_case_memory",
+        "title": "Update case memory",
+        "started_at": "2026-09-24T13:01:00.648+00:00",
+        "duration_ms": 0.71,
+        "summary": "Case HHGOA-017 written back to graph as closed (BLOCK_AND_FILE_SAR).",
+        "details": {
+          "memory": {
+            "status": "closed",
+            "outcome": "confirmed_fraud",
+            "decision": "BLOCK_AND_FILE_SAR",
+            "confidence": 0.6399,
+            "summary": "Fraud probability 100% with confidence 0.64, at or above the 0.60 threshold.",
+            "pattern_tags": [
+              "device_sharing",
+              "ip_cluster",
+              "new_customer"
+            ],
+            "sar_filed": true,
+            "evidence_ids": [
+              "EV-01",
+              "EV-02",
+              "EV-03",
+              "EV-04",
+              "EV-05",
+              "EV-06"
+            ],
+            "closed_ts": 31000000
+          }
+        }
+      }
+    ],
+    "mcp_tool_calls": [
+      {
+        "call_id": "mcp-113",
+        "tool": "get_transaction_context",
+        "arguments": {
+          "transaction_id": "T3100526"
+        },
+        "ok": true,
+        "latency_ms": 1.02,
+        "error": null
+      },
+      {
+        "call_id": "mcp-114",
+        "tool": "get_customer_history",
+        "arguments": {
+          "customer_id": "CUST-30072",
+          "as_of_ts": 31000000
+        },
+        "ok": true,
+        "latency_ms": 0.62,
+        "error": null
+      },
+      {
+        "call_id": "mcp-115",
+        "tool": "find_related_entities",
+        "arguments": {
+          "entity_id": "DEV-20034",
+          "hops": 2,
+          "as_of_ts": 31000000
+        },
+        "ok": true,
+        "latency_ms": 0.92,
+        "error": null
+      },
+      {
+        "call_id": "mcp-116",
+        "tool": "find_related_entities",
+        "arguments": {
+          "entity_id": "IP-40034",
+          "hops": 2,
+          "as_of_ts": 31000000
+        },
+        "ok": true,
+        "latency_ms": 0.88,
+        "error": null
+      },
+      {
+        "call_id": "mcp-117",
+        "tool": "find_related_entities",
+        "arguments": {
+          "entity_id": "CUST-30072",
+          "hops": 2,
+          "as_of_ts": 31000000
+        },
+        "ok": true,
+        "latency_ms": 0.94,
+        "error": null
+      },
+      {
+        "call_id": "mcp-118",
+        "tool": "find_similar_cases",
+        "arguments": {
+          "transaction_id": "T3100526",
+          "pattern_tags": [
+            "device_sharing",
+            "ip_cluster",
+            "new_customer"
+          ],
+          "k": 5
+        },
+        "ok": true,
+        "latency_ms": 0.95,
+        "error": null
+      },
+      {
+        "call_id": "mcp-119",
+        "tool": "update_case_memory",
+        "arguments": {
+          "case_id": "HHGOA-017",
+          "memory": {
+            "status": "closed",
+            "outcome": "confirmed_fraud",
+            "decision": "BLOCK_AND_FILE_SAR",
+            "confidence": 0.6399,
+            "summary": "Fraud probability 100% with confidence 0.64, at or above the 0.60 threshold.",
+            "pattern_tags": [
+              "device_sharing",
+              "ip_cluster",
+              "new_customer"
+            ],
+            "sar_filed": true,
+            "evidence_ids": [
+              "EV-01",
+              "EV-02",
+              "EV-03",
+              "EV-04",
+              "EV-05",
+              "EV-06"
+            ],
+            "closed_ts": 31000000
+          }
+        },
+        "ok": true,
+        "latency_ms": 0.65,
+        "error": null
+      }
+    ],
+    "graph_context": {
+      "transaction": {
+        "id": "T3100526",
+        "type": "Transaction",
+        "amount": 1320.0,
+        "ts": 31000000,
+        "product_cd": "W",
+        "is_fraud": -1,
+        "chargeback": false
+      },
+      "card": {
+        "id": "CARD-10073",
+        "type": "Card",
+        "card1": 13794,
+        "card4": "mastercard",
+        "card6": "credit",
+        "issuer_country": "US"
+      },
+      "device": {
+        "id": "DEV-20034",
+        "type": "Device",
+        "device_type": "mobile",
+        "device_info": "SM-G960U"
+      },
+      "ip": {
+        "id": "IP-40034",
+        "type": "IP",
+        "country": "RO",
+        "is_proxy": true,
+        "asn": "AS9009"
+      },
+      "customer": {
+        "id": "CUST-30072",
+        "type": "Customer",
+        "tenure_days": 4,
+        "addr1": 286,
+        "p_emaildomain": "protonmail.com",
+        "kyc_level": "basic",
+        "segment": "retail"
+      },
+      "stats": {
+        "device_distinct_cards": 8,
+        "device_distinct_customers": 8,
+        "device_cards": [
+          "CARD-10034",
+          "CARD-10035",
+          "CARD-10036",
+          "CARD-10037",
+          "CARD-10038",
+          "CARD-10039",
+          "CARD-10040",
+          "CARD-10073"
+        ],
+        "ip_distinct_cards": 8,
+        "ip_distinct_customers": 8,
+        "ip_cards_1h": 1,
+        "card_txn_count_1h": 1,
+        "card_amount_1h": 1320.0,
+        "card_countries_1h": [
+          "RO"
+        ],
+        "customer_txn_count_24h": 1,
+        "customer_amount_24h": 1320.0,
+        "near_threshold_count_24h": 0,
+        "fraud_labeled_neighbor_txns": [
+          "T3100034",
+          "T3100035",
+          "T3100036"
+        ]
+      },
+      "customer_history": {
+        "cards": [
+          "CARD-10073"
+        ],
+        "txn_count": 0,
+        "avg_amount": null,
+        "max_amount": null,
+        "chargeback_count": 0,
+        "known_device_ids": [],
+        "known_ip_countries": [],
+        "days_since_last_txn": null,
+        "prior_cases": []
+      },
+      "neighbourhoods": {
+        "related_device": {
+          "root": "DEV-20034",
+          "counts": {
+            "Card": 8,
+            "Case": 2,
+            "Customer": 8,
+            "IP": 1,
+            "Transaction": 8
+          },
+          "fraud_transactions": [
+            "T3100034",
+            "T3100035",
+            "T3100036"
+          ],
+          "confirmed_fraud_cases": [
+            "CASE-H900",
+            "HHGOA-001"
+          ]
+        },
+        "related_ip": {
+          "root": "IP-40034",
+          "counts": {
+            "Card": 8,
+            "Case": 2,
+            "Customer": 8,
+            "Device": 1,
+            "Transaction": 8
+          },
+          "fraud_transactions": [
+            "T3100034",
+            "T3100035",
+            "T3100036"
+          ],
+          "confirmed_fraud_cases": [
+            "CASE-H900",
+            "HHGOA-001"
+          ]
+        },
+        "related_customer": {
+          "root": "CUST-30072",
+          "counts": {
+            "Card": 1,
+            "Customer": 7,
+            "Device": 1,
+            "IP": 1,
+            "Transaction": 8
+          },
+          "fraud_transactions": [
+            "T3100034",
+            "T3100035",
+            "T3100036"
+          ],
+          "confirmed_fraud_cases": []
+        }
+      },
+      "similar_cases": [
+        {
+          "case_id": "HHGOA-001",
+          "similarity": 1.0,
+          "pattern_tags": [
+            "device_sharing",
+            "ip_cluster",
+            "new_customer"
+          ],
+          "outcome": "confirmed_fraud",
+          "decision": "BLOCK_AND_FILE_SAR",
+          "summary": "Fraud probability 100% with confidence 0.64, at or above the 0.60 threshold.",
+          "shared_entities": [
+            "DEV-20034",
+            "IP-40034"
+          ]
+        },
+        {
+          "case_id": "CASE-H900",
+          "similarity": 0.8,
+          "pattern_tags": [
+            "device_sharing",
+            "new_customer"
+          ],
+          "outcome": "confirmed_fraud",
+          "decision": "BLOCK_AND_FILE_SAR",
+          "summary": "Card-not-present ring cycling stolen cards through one Android handset.",
+          "shared_entities": [
+            "DEV-20034",
+            "IP-40034"
+          ]
+        },
+        {
+          "case_id": "HHGOA-014",
+          "similarity": 0.45,
+          "pattern_tags": [
+            "bot_device",
+            "device_sharing",
+            "ip_cluster",
+            "new_customer"
+          ],
+          "outcome": "confirmed_fraud",
+          "decision": "BLOCK_AND_FILE_SAR",
+          "summary": "Fraud probability 100% with confidence 0.64, at or above the 0.60 threshold.",
+          "shared_entities": []
+        },
+        {
+          "case_id": "CASE-H002",
+          "similarity": 0.4,
+          "pattern_tags": [
+            "device_sharing",
+            "new_customer"
+          ],
+          "outcome": "confirmed_fraud",
+          "decision": "BLOCK_TRANSACTION",
+          "summary": "Fresh accounts rotated on one device.",
+          "shared_entities": []
+        },
+        {
+          "case_id": "CASE-H006",
+          "similarity": 0.4,
+          "pattern_tags": [
+            "ip_cluster",
+            "new_customer"
+          ],
+          "outcome": "confirmed_fraud",
+          "decision": "BLOCK_TRANSACTION",
+          "summary": "Mule recruits onboarded from the same proxy.",
+          "shared_entities": []
+        }
+      ],
+      "view": {
+        "nodes": [
+          {
+            "id": "T3100526",
+            "type": "Transaction",
+            "label": "T3100526 ($1,320)",
+            "role": "focal",
+            "flagged": false
+          },
+          {
+            "id": "CARD-10073",
+            "type": "Card",
+            "label": "CARD-10073",
+            "role": "context",
+            "flagged": true
+          },
+          {
+            "id": "DEV-20034",
+            "type": "Device",
+            "label": "DEV-20034 (SM-G960U)",
+            "role": "context",
+            "flagged": true
+          },
+          {
+            "id": "IP-40034",
+            "type": "IP",
+            "label": "IP-40034 (RO, proxy)",
+            "role": "context",
+            "flagged": true
+          },
+          {
+            "id": "CUST-30072",
+            "type": "Customer",
+            "label": "CUST-30072",
+            "role": "context",
+            "flagged": true
+          },
+          {
+            "id": "CARD-10034",
+            "type": "Card",
+            "label": "CARD-10034",
+            "role": "neighbour",
+            "flagged": true
+          },
+          {
+            "id": "CARD-10035",
+            "type": "Card",
+            "label": "CARD-10035",
+            "role": "neighbour",
+            "flagged": true
+          },
+          {
+            "id": "CARD-10036",
+            "type": "Card",
+            "label": "CARD-10036",
+            "role": "neighbour",
+            "flagged": true
+          },
+          {
+            "id": "CARD-10037",
+            "type": "Card",
+            "label": "CARD-10037",
+            "role": "neighbour",
+            "flagged": true
+          },
+          {
+            "id": "CARD-10038",
+            "type": "Card",
+            "label": "CARD-10038",
+            "role": "neighbour",
+            "flagged": true
+          },
+          {
+            "id": "CARD-10039",
+            "type": "Card",
+            "label": "CARD-10039",
+            "role": "neighbour",
+            "flagged": true
+          },
+          {
+            "id": "CARD-10040",
+            "type": "Card",
+            "label": "CARD-10040",
+            "role": "neighbour",
+            "flagged": true
+          },
+          {
+            "id": "T3100034",
+            "type": "Transaction",
+            "label": "T3100034 (fraud)",
+            "role": "neighbour",
+            "flagged": true
+          },
+          {
+            "id": "T3100035",
+            "type": "Transaction",
+            "label": "T3100035 (fraud)",
+            "role": "neighbour",
+            "flagged": true
+          },
+          {
+            "id": "T3100036",
+            "type": "Transaction",
+            "label": "T3100036 (fraud)",
+            "role": "neighbour",
+            "flagged": true
+          },
+          {
+            "id": "HHGOA-001",
+            "type": "Case",
+            "label": "HHGOA-001 (confirmed_fraud)",
+            "role": "memory",
+            "flagged": true
+          },
+          {
+            "id": "CASE-H900",
+            "type": "Case",
+            "label": "CASE-H900 (confirmed_fraud)",
+            "role": "memory",
+            "flagged": true
+          },
+          {
+            "id": "HHGOA-014",
+            "type": "Case",
+            "label": "HHGOA-014 (confirmed_fraud)",
+            "role": "memory",
+            "flagged": true
+          }
+        ],
+        "edges": [
+          {
+            "source": "T3100526",
+            "target": "CARD-10073",
+            "type": "PAID_WITH"
+          },
+          {
+            "source": "T3100526",
+            "target": "DEV-20034",
+            "type": "USED_DEVICE"
+          },
+          {
+            "source": "T3100526",
+            "target": "IP-40034",
+            "type": "FROM_IP"
+          },
+          {
+            "source": "T3100526",
+            "target": "CUST-30072",
+            "type": "PLACED_BY"
+          },
+          {
+            "source": "DEV-20034",
+            "target": "CARD-10034",
+            "type": "SHARED_DEVICE"
+          },
+          {
+            "source": "DEV-20034",
+            "target": "CARD-10035",
+            "type": "SHARED_DEVICE"
+          },
+          {
+            "source": "DEV-20034",
+            "target": "CARD-10036",
+            "type": "SHARED_DEVICE"
+          },
+          {
+            "source": "DEV-20034",
+            "target": "CARD-10037",
+            "type": "SHARED_DEVICE"
+          },
+          {
+            "source": "DEV-20034",
+            "target": "CARD-10038",
+            "type": "SHARED_DEVICE"
+          },
+          {
+            "source": "DEV-20034",
+            "target": "CARD-10039",
+            "type": "SHARED_DEVICE"
+          },
+          {
+            "source": "DEV-20034",
+            "target": "CARD-10040",
+            "type": "SHARED_DEVICE"
+          },
+          {
+            "source": "DEV-20034",
+            "target": "T3100034",
+            "type": "LINKED_FRAUD"
+          },
+          {
+            "source": "DEV-20034",
+            "target": "T3100035",
+            "type": "LINKED_FRAUD"
+          },
+          {
+            "source": "DEV-20034",
+            "target": "T3100036",
+            "type": "LINKED_FRAUD"
+          },
+          {
+            "source": "IP-40034",
+            "target": "T3100034",
+            "type": "LINKED_FRAUD"
+          },
+          {
+            "source": "IP-40034",
+            "target": "T3100035",
+            "type": "LINKED_FRAUD"
+          },
+          {
+            "source": "IP-40034",
+            "target": "T3100036",
+            "type": "LINKED_FRAUD"
+          },
+          {
+            "source": "CUST-30072",
+            "target": "T3100034",
+            "type": "LINKED_FRAUD"
+          },
+          {
+            "source": "CUST-30072",
+            "target": "T3100035",
+            "type": "LINKED_FRAUD"
+          },
+          {
+            "source": "CUST-30072",
+            "target": "T3100036",
+            "type": "LINKED_FRAUD"
+          },
+          {
+            "source": "T3100526",
+            "target": "HHGOA-001",
+            "type": "SIMILAR_TO"
+          },
+          {
+            "source": "T3100526",
+            "target": "CASE-H900",
+            "type": "SIMILAR_TO"
+          },
+          {
+            "source": "T3100526",
+            "target": "HHGOA-014",
+            "type": "SIMILAR_TO"
+          }
+        ]
+      }
+    }
+  },
+  "nba_before_additional_evidence": {
+    "action": "BLOCK_AND_FILE_SAR",
+    "label": "Block, freeze account & file SAR",
+    "terminal": true,
+    "rationale": "Fraud probability 100% with confidence 0.64, at or above the 0.60 threshold.",
+    "key_drivers": [
+      "device_sharing",
+      "ip_cluster",
+      "fraud_neighbourhood",
+      "similar_case_precedent"
+    ],
+    "evidence_request": null,
+    "phase": "initial",
+    "round": 0,
+    "p_fraud": 0.9999,
+    "confidence": 0.6399,
+    "logged_at": "2026-09-24T13:01:00.648+00:00"
+  },
+  "additional_evidence_requested": false,
+  "additional_evidence": [],
+  "nba_after_additional_evidence": {
+    "action": "BLOCK_AND_FILE_SAR",
+    "label": "Block, freeze account & file SAR",
+    "terminal": true,
+    "rationale": "Fraud probability 100% with confidence 0.64, at or above the 0.60 threshold.",
+    "key_drivers": [
+      "device_sharing",
+      "ip_cluster",
+      "fraud_neighbourhood",
+      "similar_case_precedent"
+    ],
+    "evidence_request": null,
+    "phase": "initial",
+    "round": 0,
+    "p_fraud": 0.9999,
+    "confidence": 0.6399,
+    "logged_at": "2026-09-24T13:01:00.648+00:00"
+  },
+  "final_decision": {
+    "action": "BLOCK_AND_FILE_SAR",
+    "label": "Block, freeze account & file SAR",
+    "p_fraud": 0.9999,
+    "confidence": 0.6399,
+    "rationale": "Fraud probability 100% with confidence 0.64, at or above the 0.60 threshold.",
+    "justification": [
+      {
+        "name": "device_sharing",
+        "direction": "fraud",
+        "contribution": 2.2,
+        "description": "Device DEV-20034 (SM-G960U) has been used by 8 distinct cards across 8 customers.",
+        "evidence_ids": [
+          "EV-01",
+          "EV-03"
+        ],
+        "graph_elements": [
+          "DEV-20034",
+          "CARD-10034",
+          "CARD-10035",
+          "CARD-10036",
+          "CARD-10037",
+          "CARD-10038",
+          "CARD-10039",
+          "CARD-10040",
+          "CARD-10073"
+        ]
+      },
+      {
+        "name": "ip_cluster",
+        "direction": "fraud",
+        "contribution": 1.8,
+        "description": "IP IP-40034 (RO, AS9009) is shared by 8 cards / 8 customers.",
+        "evidence_ids": [
+          "EV-01",
+          "EV-04"
+        ],
+        "graph_elements": [
+          "IP-40034"
+        ]
+      },
+      {
+        "name": "fraud_neighbourhood",
+        "direction": "fraud",
+        "contribution": 1.8,
+        "description": "3 fraud-labelled transactions and 2 confirmed fraud cases within two hops of this transaction's card/device/IP.",
+        "evidence_ids": [
+          "EV-01",
+          "EV-03",
+          "EV-04",
+          "EV-05"
+        ],
+        "graph_elements": [
+          "CASE-H900",
+          "HHGOA-001",
+          "T3100034",
+          "T3100035",
+          "T3100036"
+        ]
+      },
+      {
+        "name": "similar_case_precedent",
+        "direction": "fraud",
+        "contribution": 0.9,
+        "description": "Closest closed cases: HHGOA-001 (confirmed_fraud, sim 1.00), CASE-H900 (confirmed_fraud, sim 0.80), HHGOA-014 (confirmed_fraud, sim 0.45); 100% similarity-weighted fraud rate.",
+        "evidence_ids": [
+          "EV-06"
+        ],
+        "graph_elements": [
+          "HHGOA-001",
+          "CASE-H900",
+          "HHGOA-014"
+        ]
+      },
+      {
+        "name": "proxy_ip",
+        "direction": "fraud",
+        "contribution": 0.8,
+        "description": "Transaction routed through proxy/hosting ASN AS9009 (RO).",
+        "evidence_ids": [
+          "EV-01"
+        ],
+        "graph_elements": [
+          "IP-40034"
+        ]
+      },
+      {
+        "name": "new_customer",
+        "direction": "fraud",
+        "contribution": 0.5,
+        "description": "Customer CUST-30072 is 4 days old with no prior baseline.",
+        "evidence_ids": [
+          "EV-01",
+          "EV-02"
+        ],
+        "graph_elements": [
+          "CUST-30072"
+        ]
+      }
+    ],
+    "evidence_cited": [
+      {
+        "evidence_id": "EV-01",
+        "label": "context",
+        "source": "tigergraph-mcp",
+        "tool": "get_transaction_context",
+        "mcp_call_id": "mcp-113",
+        "arguments": {
+          "transaction_id": "T3100526"
+        },
+        "latency_ms": 1.02,
+        "origin": "playbook",
+        "summary": "Txn T3100526 $1,320.00; device cards=8, IP cards=8, card 1h velocity=1, near-threshold 24h=0",
+        "graph_elements": [
+          "T3100526",
+          "CARD-10073",
+          "DEV-20034",
+          "IP-40034",
+          "CUST-30072"
+        ]
+      },
+      {
+        "evidence_id": "EV-02",
+        "label": "history",
+        "source": "tigergraph-mcp",
+        "tool": "get_customer_history",
+        "mcp_call_id": "mcp-114",
+        "arguments": {
+          "customer_id": "CUST-30072",
+          "as_of_ts": 31000000
+        },
+        "latency_ms": 0.62,
+        "origin": "playbook",
+        "summary": "0 baseline txns, avg $0.00, 0 chargebacks, 0 known devices, countries []",
+        "graph_elements": [
+          "CUST-30072"
+        ]
+      },
+      {
+        "evidence_id": "EV-03",
+        "label": "related_device",
+        "source": "tigergraph-mcp",
+        "tool": "find_related_entities",
+        "mcp_call_id": "mcp-115",
+        "arguments": {
+          "entity_id": "DEV-20034",
+          "hops": 2,
+          "as_of_ts": 31000000
+        },
+        "latency_ms": 0.92,
+        "origin": "playbook",
+        "summary": "2-hop neighbourhood of DEV-20034: Card=8, Case=2, Customer=8, IP=1, Transaction=8; fraud txns=3, confirmed cases=2",
+        "graph_elements": [
+          "DEV-20034",
+          "T3100034",
+          "T3100035",
+          "T3100036",
+          "CASE-H900",
+          "HHGOA-001"
+        ]
+      },
+      {
+        "evidence_id": "EV-04",
+        "label": "related_ip",
+        "source": "tigergraph-mcp",
+        "tool": "find_related_entities",
+        "mcp_call_id": "mcp-116",
+        "arguments": {
+          "entity_id": "IP-40034",
+          "hops": 2,
+          "as_of_ts": 31000000
+        },
+        "latency_ms": 0.88,
+        "origin": "playbook",
+        "summary": "2-hop neighbourhood of IP-40034: Card=8, Case=2, Customer=8, Device=1, Transaction=8; fraud txns=3, confirmed cases=2",
+        "graph_elements": [
+          "IP-40034",
+          "T3100034",
+          "T3100035",
+          "T3100036",
+          "CASE-H900",
+          "HHGOA-001"
+        ]
+      },
+      {
+        "evidence_id": "EV-05",
+        "label": "related_customer",
+        "source": "tigergraph-mcp",
+        "tool": "find_related_entities",
+        "mcp_call_id": "mcp-117",
+        "arguments": {
+          "entity_id": "CUST-30072",
+          "hops": 2,
+          "as_of_ts": 31000000
+        },
+        "latency_ms": 0.94,
+        "origin": "playbook",
+        "summary": "2-hop neighbourhood of CUST-30072: Card=1, Customer=7, Device=1, IP=1, Transaction=8; fraud txns=3, confirmed cases=0",
+        "graph_elements": [
+          "CUST-30072",
+          "T3100034",
+          "T3100035",
+          "T3100036"
+        ]
+      },
+      {
+        "evidence_id": "EV-06",
+        "label": "similar",
+        "source": "tigergraph-mcp",
+        "tool": "find_similar_cases",
+        "mcp_call_id": "mcp-118",
+        "arguments": {
+          "transaction_id": "T3100526",
+          "pattern_tags": [
+            "device_sharing",
+            "ip_cluster",
+            "new_customer"
+          ],
+          "k": 5
+        },
+        "latency_ms": 0.95,
+        "origin": "deterministic",
+        "summary": "5 similar closed cases for tags ['device_sharing', 'ip_cluster', 'new_customer']",
+        "graph_elements": [
+          "HHGOA-001",
+          "CASE-H900",
+          "HHGOA-014",
+          "CASE-H002",
+          "CASE-H006"
+        ]
+      }
+    ],
+    "similar_cases": [
+      {
+        "case_id": "HHGOA-001",
+        "similarity": 1.0,
+        "pattern_tags": [
+          "device_sharing",
+          "ip_cluster",
+          "new_customer"
+        ],
+        "outcome": "confirmed_fraud",
+        "decision": "BLOCK_AND_FILE_SAR",
+        "summary": "Fraud probability 100% with confidence 0.64, at or above the 0.60 threshold.",
+        "shared_entities": [
+          "DEV-20034",
+          "IP-40034"
+        ]
+      },
+      {
+        "case_id": "CASE-H900",
+        "similarity": 0.8,
+        "pattern_tags": [
+          "device_sharing",
+          "new_customer"
+        ],
+        "outcome": "confirmed_fraud",
+        "decision": "BLOCK_AND_FILE_SAR",
+        "summary": "Card-not-present ring cycling stolen cards through one Android handset.",
+        "shared_entities": [
+          "DEV-20034",
+          "IP-40034"
+        ]
+      },
+      {
+        "case_id": "HHGOA-014",
+        "similarity": 0.45,
+        "pattern_tags": [
+          "bot_device",
+          "device_sharing",
+          "ip_cluster",
+          "new_customer"
+        ],
+        "outcome": "confirmed_fraud",
+        "decision": "BLOCK_AND_FILE_SAR",
+        "summary": "Fraud probability 100% with confidence 0.64, at or above the 0.60 threshold.",
+        "shared_entities": []
+      }
+    ],
+    "sar_required": true
+  },
+  "sar": {
+    "required": true,
+    "filing_type": "FinCEN SAR (simulated)",
+    "subject_ids": [
+      "CARD-10073",
+      "CUST-30072",
+      "DEV-20034",
+      "IP-40034"
+    ],
+    "suspicious_amount": 1320.0,
+    "narrative": "Subject: customer CUST-30072 (tenure 4 days, KYC level basic), card CARD-10073 (mastercard credit).\nActivity: transaction T3100526 for $1,320.00 (product W) at TransactionDT 31000000, via device DEV-20034 (SM-G960U) and IP IP-40034 (RO, AS9009, proxy). Related 24h activity totals $1,320.00.\nTypology: device_sharing, ip_cluster, new_customer. Alert DEVICE_MULTI_CARD fired with risk score 0.86; graph investigation raised fraud probability to 100% (confidence 0.64).\nBasis for suspicion (from TigerGraph evidence):\n  - Device DEV-20034 (SM-G960U) has been used by 8 distinct cards across 8 customers. [evidence EV-01, EV-03]\n  - IP IP-40034 (RO, AS9009) is shared by 8 cards / 8 customers. [evidence EV-01, EV-04]\n  - 3 fraud-labelled transactions and 2 confirmed fraud cases within two hops of this transaction's card/device/IP. [evidence EV-01, EV-03, EV-04, EV-05]\n  - Closest closed cases: HHGOA-001 (confirmed_fraud, sim 1.00), CASE-H900 (confirmed_fraud, sim 0.80), HHGOA-014 (confirmed_fraud, sim 0.45); 100% similarity-weighted fraud rate. [evidence EV-06]\n  - Transaction routed through proxy/hosting ASN AS9009 (RO). [evidence EV-01]\n  - Customer CUST-30072 is 4 days old with no prior baseline. [evidence EV-01, EV-02]\nAction taken: transaction blocked, account frozen pending review, related cards flagged for reissue."
+  },
+  "case_memory_write": {
+    "case_id": "HHGOA-017",
+    "written": [
+      "closed_ts",
+      "confidence",
+      "decision",
+      "evidence_ids",
+      "outcome",
+      "pattern_tags",
+      "sar_filed",
+      "status",
+      "summary"
+    ],
+    "backend": "mock",
+    "memory": {
+      "status": "closed",
+      "outcome": "confirmed_fraud",
+      "decision": "BLOCK_AND_FILE_SAR",
+      "confidence": 0.6399,
+      "summary": "Fraud probability 100% with confidence 0.64, at or above the 0.60 threshold.",
+      "pattern_tags": [
+        "device_sharing",
+        "ip_cluster",
+        "new_customer"
+      ],
+      "sar_filed": true,
+      "evidence_ids": [
+        "EV-01",
+        "EV-02",
+        "EV-03",
+        "EV-04",
+        "EV-05",
+        "EV-06"
+      ],
+      "closed_ts": 31000000
+    }
+  },
+  "benchmark": {
+    "expected_initial_terminal": true,
+    "expected_final_action": "BLOCK_AND_FILE_SAR",
+    "passed": true
+  }
+}

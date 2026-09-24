@@ -1,0 +1,110 @@
+{
+  "case_id": "HHG-017",
+  "case": {
+    "status": "closed_legitimate",
+    "verdict": "legitimate",
+    "fraud_probability": 0.01,
+    "pattern": "none",
+    "pattern_description": "",
+    "affected_txn_ids": [],
+    "first_suspicious_txn_id": "",
+    "connected_card_ids": [],
+    "connected_device_profiles": [],
+    "exposure_usd": 0,
+    "evidence": [
+      {
+        "claim": "Online purchase from device profile 'Windows | Windows 10 | chrome 65.0 | 1920x1080', identity record id_15=Found; previously seen on this card before",
+        "source": "graph",
+        "ref": "query:card_history(card_id=C04570-K1)",
+        "entity_ids": [
+          "3450629"
+        ]
+      },
+      {
+        "claim": "$100.09 vs this card's 95th percentile of $999.99 for online purchases over 33 prior transactions",
+        "source": "graph",
+        "ref": "query:card_history(card_id=C04570-K1)",
+        "entity_ids": [
+          "3450629"
+        ]
+      },
+      {
+        "claim": "The same amount under product R appears 7 times before on this card (e.g. 2016-07-28, 2016-07-29, 2016-08-02, 2016-10-27), consistent with the cardholder's own habit",
+        "source": "graph",
+        "ref": "query:card_history(card_id=C04570-K1)",
+        "entity_ids": [
+          "3117007",
+          "3118964",
+          "3135192",
+          "3403833"
+        ]
+      },
+      {
+        "claim": "Classifier trained on the Jul-Oct closed cases (Vesta V/C/D/M features, unnamed) scores the flagged transaction 0.00; bank risk score was 0.57",
+        "source": "graph",
+        "ref": "model:closed_case_memory_classifier",
+        "entity_ids": [
+          "3450629"
+        ]
+      },
+      {
+        "claim": "Retrieved closed cases: CC-1383 (cleared, none, $0.00); CC-0014 (confirmed_fraud, card_not_present_fraud, $75.15); CC-0022 (confirmed_fraud, card_not_present_fraud, $100.04)",
+        "source": "graph",
+        "ref": "query:similar_closed_cases",
+        "entity_ids": [
+          "CC-1383",
+          "CC-0014",
+          "CC-0022"
+        ]
+      }
+    ],
+    "similar_prior_cases": [
+      "CC-1383",
+      "CC-0014",
+      "CC-0022"
+    ],
+    "summary": "Risk score on 3450629 ($100.09, online). Initial fraud probability 0.01; no further evidence was needed. Verdict legitimate.",
+    "written_to_graph": false,
+    "graph_case_id": ""
+  },
+  "evidence_requests": [],
+  "next_best_actions": {
+    "initial": [
+      {
+        "action": "ALLOW_TRANSACTION",
+        "route": "auto",
+        "reason": "Policy 6: activity consistent with the card's history on two independent signals"
+      },
+      {
+        "action": "CLOSE_NO_FRAUD",
+        "route": "auto",
+        "reason": "Policy 6: probability at or below 0.15 on two independent signals"
+      }
+    ],
+    "final": [
+      {
+        "action": "ALLOW_TRANSACTION",
+        "route": "auto",
+        "reason": "Policy 6: activity consistent with the card's history on two independent signals"
+      },
+      {
+        "action": "CLOSE_NO_FRAUD",
+        "route": "auto",
+        "reason": "Policy 6: probability at or below 0.15 on two independent signals"
+      }
+    ],
+    "what_changed": "nothing"
+  },
+  "sar": {
+    "file": false,
+    "reason": "No report: verdict is not fraud.",
+    "narrative": "",
+    "subjects": [],
+    "total_amount_usd": 0,
+    "activity_dates": []
+  },
+  "stop_reason": "Fraud probability at or beyond the policy 6 thresholds on at least two independent signals; further steps would not change the decision.",
+  "tool_calls": 6,
+  "tokens": 0,
+  "latency_s": 0.12
+}

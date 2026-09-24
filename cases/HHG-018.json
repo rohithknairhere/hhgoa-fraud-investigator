@@ -1,0 +1,116 @@
+{
+  "case_id": "HHG-018",
+  "case": {
+    "status": "closed_legitimate",
+    "verdict": "legitimate",
+    "fraud_probability": 0.02,
+    "pattern": "none",
+    "pattern_description": "",
+    "affected_txn_ids": [],
+    "first_suspicious_txn_id": "",
+    "connected_card_ids": [],
+    "connected_device_profiles": [],
+    "exposure_usd": 0,
+    "evidence": [
+      {
+        "claim": "$39.08 vs this card's 95th percentile of $498.12 for in_person purchases over 5330 prior transactions",
+        "source": "graph",
+        "ref": "query:card_history(card_id=C02354-K2)",
+        "entity_ids": [
+          "3491361"
+        ]
+      },
+      {
+        "claim": "Billing region 126 appears 301 times on this card in the prior 90 days",
+        "source": "graph",
+        "ref": "query:region_history(card_id=C02354-K2, region=126, days=90)",
+        "entity_ids": [
+          "3491361"
+        ]
+      },
+      {
+        "claim": "Classifier trained on the Jul-Oct closed cases (Vesta V/C/D/M features, unnamed) scores the flagged transaction 0.03; bank risk score was 0.48",
+        "source": "graph",
+        "ref": "model:closed_case_memory_classifier",
+        "entity_ids": [
+          "3491361"
+        ]
+      },
+      {
+        "claim": "Retrieved closed cases: CC-0405 (cleared, none, $0.00); CC-5558 (confirmed_fraud, card_not_present_fraud, $8.20); CC-5441 (confirmed_fraud, out_of_region_use, $2,698.02)",
+        "source": "graph",
+        "ref": "query:similar_closed_cases",
+        "entity_ids": [
+          "CC-0405",
+          "CC-5558",
+          "CC-5441"
+        ]
+      },
+      {
+        "claim": "Customer confirms the purchase (assumed: activity matches the card's own history)",
+        "source": "customer",
+        "ref": "evidence_request:1",
+        "entity_ids": []
+      }
+    ],
+    "similar_prior_cases": [
+      "CC-0405",
+      "CC-5558",
+      "CC-5441"
+    ],
+    "summary": "Customer report on 3491361 ($39.08, in_person). Initial fraud probability 0.02; after the customer validation it is 0.02. Verdict legitimate.",
+    "written_to_graph": false,
+    "graph_case_id": ""
+  },
+  "evidence_requests": [
+    {
+      "type": "customer_validation",
+      "asked_after_step": 4,
+      "assumed_response": "Customer confirms the purchase (assumed: activity matches the card's own history)"
+    }
+  ],
+  "next_best_actions": {
+    "initial": [
+      {
+        "action": "CREATE_CASE",
+        "route": "auto",
+        "reason": "3a: a case is opened whenever evidence is requested"
+      },
+      {
+        "action": "VERIFY_WITH_CUSTOMER",
+        "route": "auto",
+        "reason": "R1: probability 0.02 rests on weak or single signals; verify before any block"
+      }
+    ],
+    "final": [
+      {
+        "action": "CREATE_CASE",
+        "route": "auto",
+        "reason": "3a: case opened for the verification, closed as legitimate"
+      },
+      {
+        "action": "ALLOW_TRANSACTION",
+        "route": "auto",
+        "reason": "R3: customer confirmed the activity"
+      },
+      {
+        "action": "CLOSE_NO_FRAUD",
+        "route": "auto",
+        "reason": "R3"
+      }
+    ],
+    "what_changed": "Assumed response (Customer confirms the purchase) left fraud probability at 0.02; with the verification step resolved, the recommendation moved from verification to the actions the policy requires."
+  },
+  "sar": {
+    "file": false,
+    "reason": "No report: verdict is not fraud.",
+    "narrative": "",
+    "subjects": [],
+    "total_amount_usd": 0,
+    "activity_dates": []
+  },
+  "stop_reason": "The verification response settled the question (policy 6).",
+  "tool_calls": 5,
+  "tokens": 0,
+  "latency_s": 0.09
+}

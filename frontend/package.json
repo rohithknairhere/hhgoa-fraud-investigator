@@ -1,0 +1,39 @@
+{
+  "name": "hhgoa-fraud-dashboard",
+  "version": "1.0.0",
+  "private": true,
+  "scripts": {
+    "sync-data": "node scripts/sync-benchmarks.mjs",
+    "dev": "npm run sync-data && next dev",
+    "prebuild": "npm run sync-data",
+    "build": "next build",
+    "start": "next start",
+    "lint": "next lint",
+    "typecheck": "tsc --noEmit",
+    "check:contrast": "node scripts/check-contrast.mjs",
+    "check:links": "node scripts/check-links.mjs",
+    "check:secrets": "node scripts/check-secrets.mjs",
+    "verify": "npm run check:contrast && npm run check:links && npm run check:secrets"
+  },
+  "dependencies": {
+    "@hookform/resolvers": "^3.10.0",
+    "next": "^14.2.35",
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1",
+    "react-hook-form": "^7.88.0",
+    "server-only": "^0.0.1",
+    "sharp": "^0.35.4",
+    "zod": "^3.25.76"
+  },
+  "devDependencies": {
+    "@types/node": "^20.19.43",
+    "@types/react": "^18.3.31",
+    "@types/react-dom": "^18.3.7",
+    "autoprefixer": "^10.6.1",
+    "eslint": "^8.57.1",
+    "eslint-config-next": "^14.2.35",
+    "postcss": "^8.5.28",
+    "tailwindcss": "3.4",
+    "typescript": "^5.9.3"
+  }
+}
