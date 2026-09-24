@@ -1,0 +1,35 @@
+{
+  "alert_id": "MON-BURST-02",
+  "type": "threshold_evasion_burst",
+  "pattern": "undocumented",
+  "description": "Card C07297-K1 made three or more online purchases between $450 and $500 within one hour, from a device new to the account.",
+  "method": "Per-card sliding one-hour window over online transactions (query: threshold_bursts).",
+  "card_ids": [
+    "C07297-K1"
+  ],
+  "benchmark_cases_touched": [
+    "HHG-006"
+  ],
+  "closed_case_memory": [
+    "CC-4124",
+    "CC-4086",
+    "CC-3907"
+  ],
+  "recommended_actions": [
+    {
+      "action": "CREATE_CASE",
+      "route": "auto",
+      "reason": "3a: pattern matches confirmed closed cases"
+    },
+    {
+      "action": "VERIFY_WITH_CUSTOMER",
+      "route": "auto",
+      "reason": "R1: confirm with the cardholder before blocking"
+    },
+    {
+      "action": "MONITOR_CARD",
+      "route": "auto",
+      "reason": "Raise monitoring while verification is pending"
+    }
+  ]
+}

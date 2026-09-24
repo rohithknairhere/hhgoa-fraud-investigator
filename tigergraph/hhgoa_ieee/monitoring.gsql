@@ -1,0 +1,67 @@
+// Autonomous monitoring queries (run over the exam period, beyond the 20 benchmark cases).
+USE GRAPH HHGOA_IEEE
+
+// Weakly connected components on the card-device bipartite graph, restricted to transactions behind an
+// anonymous or hidden proxy in a time window. A component with many cards is a candidate fraud ring.
+CREATE OR REPLACE QUERY device_ring_components(DATETIME t0, DATETIME t1, INT iterations = 12) FOR GRAPH HHGOA_IEEE {
+  MinAccum<STRING> @cc;
+  MinAccum<STRING> @lab;
+  MapAccum<STRING, SetAccum<STRING>> @@comp_cards;
+  MapAccum<STRING, SetAccum<STRING>> @@comp_devices;
+  MapAccum<STRING, SumAccum<DOUBLE>> @@comp_amount;
+  MapAccum<STRING, SumAccum<INT>> @@comp_txns;
+  MapAccum<STRING, MinAccum<DATETIME>> @@comp_first;
+  MapAccum<STRING, MaxAccum<DATETIME>> @@comp_last;
+
+  All = {Transaction.*};
+  P = SELECT t FROM All:t
+      WHERE t.ts >= t0 AND t.ts <= t1 AND (t.id_23 == "IP_PROXY:ANONYMOUS" OR t.id_23 == "IP_PROXY:HIDDEN");
+  // Only device profiles that name a specific device model link cards; generic desktop or browser-only
+  // profiles are shared by thousands of unrelated customers and would chain everything together.
+  Devs = SELECT d FROM P:t -(FROM_DEVICE>)- DeviceProfile:d
+         WHERE d.profile NOT LIKE "Windows%" AND d.profile NOT LIKE "iOS Device%" AND d.profile NOT LIKE "MacOS%"
+           AND d.profile NOT LIKE "Trident%" AND d.profile NOT LIKE "rv:%" AND d.profile NOT LIKE "Linux%"
+           AND d.profile NOT LIKE " %" AND d.profile NOT LIKE "|%" AND d.profile NOT LIKE "SAMSUNG |%"
+         POST-ACCUM d.@cc += d.profile;
+  T = SELECT t FROM Devs:d -(DEVICE_OF>)- Transaction:t
+      WHERE t.ts >= t0 AND t.ts <= t1 AND (t.id_23 == "IP_PROXY:ANONYMOUS" OR t.id_23 == "IP_PROXY:HIDDEN");
+  Cards = SELECT c FROM T:t -(MADE_BY>)- Card:c POST-ACCUM c.@cc += c.card_id;
+
+  WHILE TRUE LIMIT iterations DO
+    V1 = SELECT t FROM T:t -(MADE_BY>)- Card:c ACCUM t.@lab += c.@cc;
+    V2 = SELECT t FROM T:t -(FROM_DEVICE>)- DeviceProfile:d ACCUM t.@lab += d.@cc;
+    V3 = SELECT d FROM T:t -(FROM_DEVICE>)- DeviceProfile:d ACCUM d.@cc += t.@lab;
+    V4 = SELECT c FROM T:t -(MADE_BY>)- Card:c ACCUM c.@cc += t.@lab;
+  END;
+
+  V5 = SELECT c FROM Cards:c ACCUM @@comp_cards += (c.@cc -> c.card_id);
+  V6 = SELECT d FROM Devs:d ACCUM @@comp_devices += (d.@cc -> d.profile);
+  V7 = SELECT t FROM T:t -(MADE_BY>)- Card:c
+      ACCUM @@comp_amount += (c.@cc -> t.amount), @@comp_txns += (c.@cc -> 1),
+            @@comp_first += (c.@cc -> t.ts), @@comp_last += (c.@cc -> t.ts);
+  PRINT @@comp_cards AS cards, @@comp_devices AS devices, @@comp_amount AS amount, @@comp_txns AS txns,
+        @@comp_first AS first_ts, @@comp_last AS last_ts;
+}
+
+// Cards with three or more online purchases between $450 and $500 from a device new to the account inside one hour.
+CREATE OR REPLACE QUERY threshold_bursts(DATETIME t0, DATETIME t1, INT min_txns = 3) FOR GRAPH HHGOA_IEEE {
+  ListAccum<DATETIME> @times;
+  SumAccum<INT> @in_window;
+  MaxAccum<INT> @best;
+  SetAccum<STRING> @@hits;
+
+  All = {Transaction.*};
+  T = SELECT t FROM All:t
+      WHERE t.ts >= t0 AND t.ts <= t1 AND t.channel == "online" AND t.amount >= 449.99 AND t.amount < 500
+        AND t.id_15 == "New";
+  C = SELECT c FROM T:t -(MADE_BY>)- Card:c ACCUM c.@times += t.ts;
+  T = SELECT t FROM T:t -(MADE_BY>)- Card:c
+      ACCUM FOREACH tm IN c.@times DO
+              IF datetime_diff(t.ts, tm) >= 0 AND datetime_diff(t.ts, tm) <= 3600 THEN t.@in_window += 1 END
+            END;
+  C = SELECT c FROM T:t -(MADE_BY>)- Card:c ACCUM c.@best += t.@in_window HAVING c.@best >= min_txns;
+  V8 = SELECT t FROM T:t -(MADE_BY>)- Card:c WHERE c.@best >= min_txns ACCUM @@hits += c.card_id;
+  PRINT @@hits AS cards;
+}
+
+INSTALL QUERY device_ring_components, threshold_bursts
