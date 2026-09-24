@@ -1,65 +1,76 @@
-# Teaching a Fraud Agent When to Ask: Graph Investigations on the HHGOA IEEE-CIS Dataset
+# Building a fraud investigation agent for Hacker House Goa
 
-*A TigerGraph × Hacker House Goa submission.*
+For the TigerGraph Hacker House Goa challenge we built an agent that works fraud alerts the way an analyst would. It looks up the card's history, checks the device and the billing region, finds other cards that touched the same device, and reads what the bank decided on similar cases in the past. Then it decides whether it knows enough to act. If it doesn't, it asks the customer first.
 
-## What we built
+This post covers what we built, how it fits together, how we used the graph, and what we'd do differently with more time.
 
-Fraud analysts spend most of their time assembling context: the card's history, the device, who else used that device, the billing region, and what the bank decided the last time it saw something similar. Only then can they decide, and often they still need to ask the customer. We built an agent that does that assembly, knows when its evidence is too thin to act on, and recommends next best actions under the bank's written fraud policy, including who has to approve each one.
+## The dataset
 
-It runs on the 20-case HHGOA_IEEE benchmark (590,742 transactions, 144,432 identity records, 5,565 closed cases). For each case it produces an answer file in the challenge format: the internal case record, a suspicious activity report when the policy requires one, and the next best actions before and after additional evidence.
+The HHGOA_IEEE dataset is the IEEE-CIS fraud data with the fraud flag removed. It has 590,742 card transactions from July to December 2016, 144,432 identity records for online purchases, and 5,565 closed investigations from July to October. The benchmark is 20 alerts from November and December. Some came from the bank's risk model, some from customers saying "I never made this purchase", and one from an analyst.
 
-## Architecture
+The README makes two points that shaped everything we did. The risk score is often wrong in both directions, and about half the benchmark cases are legitimate. An agent that blocks everything would do badly, so the interesting part is deciding when not to act.
 
-**The graph.** We followed the README's suggested schema and extended it. Customers own cards, cards make transactions, and transactions link to a device profile (DeviceInfo, OS, browser and screen), a purchaser email domain and a billing region. Closed cases link to the transactions and cards they involved, and our own investigation cases link to the transactions they flag, the cards they connect and the closed cases they cite. Card IDs are not a column in the data. We reconstructed them from the customer ID and the card-type order, and the reconstruction matches all 1,933 cards named in the closed cases.
+## How the data became a graph
 
-**The queries.** The agent investigates through a small set of named, typed graph queries rather than free-form query text:
+We started from the schema the README suggests. Customers own cards and cards make transactions. Each transaction links to a device profile, a purchaser email domain and a billing region. A device profile is the combination of device info, operating system, browser and screen size. Closed cases link to the transactions and cards they involved. We added a vertex for our own investigation cases, which links to the transactions it flags, the cards it connects and the closed cases it cites.
 
-- `card_window`: the card's timeline around the alert, for testing sequences and bursts.
-- `card_history`: the card's baseline of amounts, channels, device profiles and regions.
-- `region_history`: how often the card has used a billing region.
-- `device_neighbors`: every other card that used the same device profile, with proxy flags.
-- `similar_closed_cases`: case memory retrieval by card, pattern and shared device.
+One thing tripped us up early. The case pack refers to cards like C12382-K1, but there's no card ID column in the transactions file. After some digging we found the rule: the customer ID plus a number based on the card type, in alphabetical order. That reconstruction matched all 1,933 cards named in the closed cases, which gave us confidence that every connection the agent draws later is real.
 
-The GSQL versions are in `tigergraph/hhgoa_ieee/`. They're exposed to the agent as MCP tools, so the model never writes query text itself.
+The agent talks to the graph through five named queries instead of writing its own:
 
-**The loop.** A LangGraph workflow runs trigger → investigate → assess → initial next best action → gather more evidence → final next best action → write case memory. Each step appends to the case record, so the answer file shows the full progression.
+- card_window returns the card's transactions around the alert
+- card_history gives the card's normal amounts, channels, devices and regions
+- region_history counts how often the card has been used in a billing region
+- device_neighbors finds every other card that used the same device profile, with proxy flags
+- similar_closed_cases pulls past cases on the same card, with the same pattern, or sharing a device
 
-**Memory.** The closed cases play two roles. They're retrieved per alert and cited in `similar_prior_cases`. They also train a LightGBM classifier on July to October only, using Vesta's unnamed V, C, D and M features. The agent uses its score as one signal and says so in the evidence, rather than pretending to know what V127 means.
+The GSQL for all of these is in tigergraph/hhgoa_ieee in the repo. We expose them as MCP tools so a model can call them but can't send arbitrary queries.
+
+## The investigation loop
+
+Each case runs through a LangGraph workflow with a fixed order: trigger, investigate, assess, first recommendation, gather more evidence, final recommendation, and write the case to memory. Each step adds to the case record, so the answer file shows how the case moved along instead of just the ending.
+
+The closed cases do two jobs. First, they're memory. For every alert the agent retrieves similar past cases and cites them. Second, they're labels. We trained a LightGBM classifier on July to October only, using the unnamed Vesta columns (the V, C, D and M features). On October data it separated fraud from legitimate activity better than the bank's own score, with an AUC of 0.905 against 0.866. The agent treats that score as one signal among several, and the evidence says plainly that it comes from unnamed features.
 
 ## Handling uncertainty
 
-The README warns that the bank's risk score is often wrong in both directions and that half the cases are legitimate. So the risk score never decides anything on its own. The agent's fraud probability starts from the closed-case classifier, then moves with graph evidence:
+The agent's fraud probability starts from that classifier and then moves with what the graph shows. A device the card has never used, an amount far above its normal range, or an in-person purchase in a region it has never visited pushes the number up. A region the card uses regularly, or a charge that repeats the customer's own history, pulls it down.
 
-- **Toward fraud:** a device profile new to the card, an amount far above the card's baseline, card-present use in a region the card has never used, or a documented or undocumented pattern match.
-- **Toward legitimate:** a region the card uses regularly, or a charge that repeats the cardholder's own history.
+The bank's fraud policy decides what the agent is allowed to do with that number. A few rules mattered most:
 
-The policy then decides what that probability allows:
+- If the case rests on one weak signal, the agent has to verify with the customer before blocking anything (R1).
+- A case gets opened whenever the agent asks for evidence or a customer disputes a charge.
+- If the probability is above 0.85 or below 0.15 with at least two independent pieces of evidence, it stops and acts without asking anyone.
+- If the customer doesn't reply within 24 hours, it monitors the card, declines pending authorizations, and escalates when more than $500 is at stake (R4 and R8).
 
-- **R1.** A probability built on one weak signal leads to `VERIFY_WITH_CUSTOMER` or `STEP_UP_AUTH`, never a block.
-- **3a.** A case is opened whenever evidence is requested or a customer disputes a charge.
-- **Stopping rule (6).** When the probability is at or beyond 0.85 or 0.15 on two independent pieces of evidence, the agent stops and acts without asking.
-- **Simulated responses.** Customer replies aren't provided, so the agent records its assumption in `evidence_requests`. That assumption follows the evidence: a denial when the anomalies and memory point to fraud, a confirmation when the activity matches the card's own history, and no reply when the evidence is balanced.
-- **R4 and R8.** "No reply" matters. The agent then monitors, declines pending authorizations, and escalates when the exposure exceeds $500, marking the verdict `uncertain` instead of guessing.
+Customer replies aren't in the dataset, so the agent has to assume one and write that assumption down. It assumes a denial when the anomalies and past cases point to fraud, and a confirmation when the activity matches the card's own history. When the evidence is balanced, it assumes no reply. That last choice leads to an honest "uncertain" verdict instead of a guess.
 
-Every action carries its approval route: `auto`, `L1` for declines and blocks up to $2,500, and `L2` for larger blocks and every report. A case and a report are kept distinct. A report is filed only when fraud is confirmed and either the exposure exceeds $1,000, a shared device links other cards, or the pattern is undocumented.
+Every recommended action carries its approval route. The agent can act alone on low-impact steps. A team lead approves declines and blocks up to $2,500. A fraud manager approves bigger blocks and every regulatory report. A report is only filed when fraud is confirmed and either more than $1,000 is involved, a shared device links other cards, or the pattern isn't one of the documented ones.
 
-## Finding what the documentation doesn't name
+A good example is HHG-019. It's an online purchase from a new device, and the evidence leans toward fraud at 0.73. That isn't enough to block under R1, so the first recommendation is to open a case, verify with the customer and monitor the card. Once the assumed denial comes back, the probability rises to 0.95 and the recommendation becomes a card block, the case, and a report, because the same device profile shows up on two other cards with likely fraud.
 
-Reading the closed-case notes surfaced two patterns the five documented typologies don't cover:
+## Two patterns the documentation doesn't cover
 
-- **Just-under-$500 bursts.** Three or four online purchases within an hour, each priced just below a $500 authorization threshold, from devices new to the account (for example CC-3748 and CC-3907). Case HHG-006 matches this exactly: four purchases in thirty minutes totalling $1,906.07.
-- **A shared device ring.** One Samsung SM-G935F profile behind an anonymous proxy, used on more than twenty unrelated cardholders' cards in a month (CC-2649 and its siblings). Case HHG-014 is on the same profile.
+The README lists five known fraud patterns and says there are others. Reading through the analyst notes on the closed cases turned up two.
 
-The agent labels both `undocumented`, describes them in its own words, and applies R9: open a case, file a report, and escalate to an analyst. For the ring it also applies R6: monitor every connected card.
+The first is a burst of three or four online purchases within an hour, each priced just under $500, from devices new to the account. It looks like someone deliberately staying under an authorization limit. Case HHG-006 fits exactly: four purchases in thirty minutes, $1,906.07 in total, and the agent finds closed cases CC-3748, CC-3841 and CC-3907 describing the same thing.
+
+The second is a single Samsung SM-G935F profile behind an anonymous proxy that made purchases on more than twenty unrelated customers' cards in the same month. Case HHG-014 came from an analyst asking about that same device.
+
+The agent labels both as undocumented, describes them in its own words, files a report and escalates to an analyst. For the device ring it also puts every connected card under monitoring.
 
 ## What we learned
 
-- **Schema work is investigation work.** Rebuilding card IDs and device profiles correctly mattered more than any model, because every connection the agent draws depends on them.
-- **The closed cases are the real ground truth.** Using them both as retrievable memory and as training labels, bounded to the months before the benchmark, gave the agent calibrated probabilities without touching the public Kaggle labels.
-- **Uncertainty is a first-class outcome.** Writing "no reply, escalate" is a better answer than inventing a denial.
+The schema work mattered more than the model. Getting card IDs and device profiles right was what made the connections trustworthy, and a wrong join there would have quietly broken everything built on top.
 
-## What we would improve with more time
+The closed cases are the only place the truth is written down, and they're useful in more than one way. Retrieving them helps explain a decision, and training on them helps make one.
 
-- Run end to end on TigerGraph Savanna. The schema and queries are written, but our build machine had no instance available during the hackathon, so the agent ran on a local mirror of the same graph and reports `written_to_graph: false` honestly.
-- Load the policy, the pattern descriptions, the closed-case narratives and the FinCEN guidance into TigerGraph vector search, and let an LLM write summaries and SAR narratives grounded in the retrieved text.
-- Monitor November and December on its own, picking up alerts beyond the 20 cases.
+We also stopped treating "uncertain" as a failure. On a genuinely ambiguous case, saying so and handing it to a person is the right answer.
+
+## What we'd improve with more time
+
+The biggest gap is TigerGraph itself. We wrote the schema and the queries, but we couldn't get an instance running on our build machine in time, so the agent ran on a local copy of the same graph. Every answer file marks the case as not written to the graph rather than pretending it was. Loading everything into Savanna is the first thing we'd do next.
+
+After that, we'd put the fraud policy, the pattern descriptions, the closed case notes and the FinCEN guidance into TigerGraph's vector search. Then a language model could write case summaries and report narratives grounded in that text. Right now those are filled in from templates.
+
+Finally, we'd let the agent watch November and December on its own and pick up alerts beyond the 20 benchmark cases.
