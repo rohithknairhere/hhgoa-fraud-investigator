@@ -29,26 +29,40 @@
         ]
       },
       {
-        "claim": "Retrieved closed cases: CC-2447 (confirmed_fraud, account_takeover, $33.95); CC-2277 (confirmed_fraud, account_takeover, $81.93); CC-0007 (confirmed_fraud, card_not_present_fraud, $99.91); CC-0031 (confirmed_fraud, card_not_present_new_device, $20.36)",
+        "claim": "Retrieved closed cases: CC-2447 (confirmed_fraud, account_takeover, $33.95); CC-2277 (confirmed_fraud, account_takeover, $81.93); CC-5531 (confirmed_fraud, card_not_present_fraud, $17.11); CC-5285 (confirmed_fraud, card_not_present_new_device, $321.69); CC-5111 (confirmed_fraud, card_not_present_new_device, $49.92)",
         "source": "graph",
         "ref": "query:similar_closed_cases",
         "entity_ids": [
           "CC-2447",
           "CC-2277",
-          "CC-0007",
-          "CC-0031"
+          "CC-5531",
+          "CC-5285",
+          "CC-5111"
         ]
+      },
+      {
+        "claim": "The decision to allow the transaction is consistent with R1, which requires verification before blocking on a single weak signal when the fraud probability is below 0.70.",
+        "source": "document",
+        "ref": "KC-0005 (R1)",
+        "entity_ids": []
+      },
+      {
+        "claim": "The transaction did not meet the criteria for card not present fraud under Pattern 2 because it was a single unusual purchase rather than a burst of multiple transactions.",
+        "source": "document",
+        "ref": "KC-0001 (Pattern 2: Card-not-present fraud)",
+        "entity_ids": []
       }
     ],
     "similar_prior_cases": [
       "CC-2447",
       "CC-2277",
-      "CC-0007",
-      "CC-0031"
+      "CC-5531",
+      "CC-5285",
+      "CC-5111"
     ],
-    "summary": "Risk score on 3509359 ($125.08, online). Initial fraud probability 0.04; no further evidence was needed. Verdict legitimate.",
-    "written_to_graph": false,
-    "graph_case_id": ""
+    "summary": "Case HHG-020 was opened after transaction 3509359 for $125.08 triggered a risk score of 0.52. The transaction was conducted online using a new device profile on Windows 10 that had not been seen on card C12265-K2 before. Despite the new device, a secondary classifier scored the transaction at 0.01, and the final fraud probability was determined to be 0.04. Following Policy 6, the transaction was allowed and the case closed as legitimate because the probability was below 0.15 on two independent signals.",
+    "written_to_graph": true,
+    "graph_case_id": "INV-HHG-020"
   },
   "evidence_requests": [],
   "next_best_actions": {
@@ -87,7 +101,7 @@
     "activity_dates": []
   },
   "stop_reason": "Fraud probability at or beyond the policy 6 thresholds on at least two independent signals; further steps would not change the decision.",
-  "tool_calls": 6,
-  "tokens": 0,
-  "latency_s": 0.09
+  "tool_calls": 11,
+  "tokens": 3713,
+  "latency_s": 36.7
 }

@@ -55,15 +55,27 @@
           "CC-3587",
           "CC-2964"
         ]
+      },
+      {
+        "claim": "The initial risk score of 0.61 for transaction 3514030 was not treated as a definitive verdict, aligning with policy guidance that a risk score is a reason to look, never a verdict.",
+        "source": "document",
+        "ref": "KC-0024 (0. What the agent starts with)",
+        "entity_ids": []
+      },
+      {
+        "claim": "The decision to close the case as legitimate, despite an initial high risk score, is consistent with the understanding that many suspicious-looking cases are legitimate and require further evidence beyond the initial score.",
+        "source": "document",
+        "ref": "KC-0023 (Things to know)",
+        "entity_ids": []
       }
     ],
     "similar_prior_cases": [
       "CC-3587",
       "CC-2964"
     ],
-    "summary": "Risk score on 3514030 ($77.07, in_person). Initial fraud probability 0.00; no further evidence was needed. Verdict legitimate.",
-    "written_to_graph": false,
-    "graph_case_id": ""
+    "summary": "Case HHG-001, opened on 2016-12-05, was triggered by transaction 3514030 ($77.07) on card C12382-K1, which received a bank risk score of 0.61. Despite the elevated risk score, the investigation found strong evidence of legitimacy. The transaction amount was well below the card's 95th percentile for in-person purchases, the product and amount matched 10 prior transactions consistent with the cardholder's habit, and the billing region 444 had appeared 10 times in the prior 90 days. Furthermore, an independent classifier scored the transaction at 0.00. Based on this evidence, the transaction was deemed legitimate, and the case was closed with a fraud probability of 0.0, consistent with policy guidance to look beyond initial risk scores.",
+    "written_to_graph": true,
+    "graph_case_id": "INV-HHG-001"
   },
   "evidence_requests": [],
   "next_best_actions": {
@@ -102,7 +114,7 @@
     "activity_dates": []
   },
   "stop_reason": "Fraud probability at or beyond the policy 6 thresholds on at least two independent signals; further steps would not change the decision.",
-  "tool_calls": 5,
-  "tokens": 0,
-  "latency_s": 0.1
+  "tool_calls": 8,
+  "tokens": 4434,
+  "latency_s": 27.84
 }

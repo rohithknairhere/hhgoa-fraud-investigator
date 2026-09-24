@@ -51,6 +51,24 @@
         "source": "customer",
         "ref": "evidence_request:1",
         "entity_ids": []
+      },
+      {
+        "claim": "The initial action to verify the transaction with the customer was consistent with policy R1, which advises verification for ambiguous single unusual online purchases when fraud probability is low.",
+        "source": "document",
+        "ref": "KC-0001 (Pattern 2: Card-not-present fraud)",
+        "entity_ids": []
+      },
+      {
+        "claim": "The final decision to close the case as no fraud and allow the transaction is consistent with policy R3, as the customer confirmed the activity.",
+        "source": "document",
+        "ref": "KC-0007 (R3)",
+        "entity_ids": []
+      },
+      {
+        "claim": "The initial flagging of the transaction was partly due to an online purchase from a new device profile and an amount exceeding the card's typical range, indicators often associated with card-not-present fraud as described in Pattern 2.",
+        "source": "document",
+        "ref": "KC-0001 (Pattern 2: Card-not-present fraud)",
+        "entity_ids": []
       }
     ],
     "similar_prior_cases": [
@@ -58,9 +76,9 @@
       "CC-3778",
       "CC-2121"
     ],
-    "summary": "Customer report on 3583227 ($128.33, online). Initial fraud probability 0.06; after the customer validation it is 0.06. Verdict legitimate.",
-    "written_to_graph": false,
-    "graph_case_id": ""
+    "summary": "Case HHG-004 was opened on 2016-12-29 following customer C08106 reporting an unrecognized $128.33 online purchase (transaction 3583227). Initial evidence showed the purchase was made from a new device profile (firefox 47.0) and the amount exceeded the card's 95th percentile for online purchases. Despite these flags, the fraud classifier scored the transaction at 0.01. A customer validation request confirmed the purchase was legitimate, assumed to match the card's own history. The transaction was allowed, and the case is closed as legitimate with no fraud exposure.",
+    "written_to_graph": true,
+    "graph_case_id": "INV-HHG-004"
   },
   "evidence_requests": [
     {
@@ -110,7 +128,7 @@
     "activity_dates": []
   },
   "stop_reason": "The verification response settled the question (policy 6).",
-  "tool_calls": 6,
-  "tokens": 0,
-  "latency_s": 0.07
+  "tool_calls": 10,
+  "tokens": 4025,
+  "latency_s": 23.74
 }

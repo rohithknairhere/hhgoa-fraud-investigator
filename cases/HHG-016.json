@@ -39,15 +39,14 @@
         ]
       },
       {
-        "claim": "Retrieved closed cases: CC-0071 (confirmed_fraud, card_not_present_new_device, $47.19); CC-0110 (confirmed_fraud, card_not_present_new_device, $83.79); CC-0123 (confirmed_fraud, card_not_present_new_device, $200.02); CC-0014 (confirmed_fraud, card_not_present_fraud, $75.15); CC-0022 (confirmed_fraud, card_not_present_fraud, $100.04)",
+        "claim": "Retrieved closed cases: CC-5553 (confirmed_fraud, card_not_present_fraud, $191.94); CC-5552 (confirmed_fraud, card_not_present_fraud, $94.78); CC-5548 (confirmed_fraud, card_not_present_fraud, $150.08); CC-5564 (confirmed_fraud, card_not_present_new_device, $16.69)",
         "source": "graph",
         "ref": "query:similar_closed_cases",
         "entity_ids": [
-          "CC-0071",
-          "CC-0110",
-          "CC-0123",
-          "CC-0014",
-          "CC-0022"
+          "CC-5553",
+          "CC-5552",
+          "CC-5548",
+          "CC-5564"
         ]
       },
       {
@@ -55,18 +54,35 @@
         "source": "customer",
         "ref": "evidence_request:1",
         "entity_ids": []
+      },
+      {
+        "claim": "The transaction aligns with the card not present from a new device pattern as it was an online purchase from a device profile never before seen on this account.",
+        "source": "document",
+        "ref": "KC-0002 (Pattern 3: Card-not-present fraud from a new device)",
+        "entity_ids": []
+      },
+      {
+        "claim": "Policy R2 was followed to block the card and create a case after the customer denied the transaction.",
+        "source": "document",
+        "ref": "KC-0006 (R2)",
+        "entity_ids": []
+      },
+      {
+        "claim": "A case was opened under policy 3a because evidence was requested from the customer to validate the flagged transaction.",
+        "source": "document",
+        "ref": "KC-0001 (Pattern 2: Card-not-present fraud)",
+        "entity_ids": []
       }
     ],
     "similar_prior_cases": [
-      "CC-0071",
-      "CC-0110",
-      "CC-0123",
-      "CC-0014",
-      "CC-0022"
+      "CC-5553",
+      "CC-5552",
+      "CC-5548",
+      "CC-5564"
     ],
-    "summary": "Customer report on 3534820 ($59.67, online). Initial fraud probability 0.66; after the customer validation it is 0.91. Verdict fraud, pattern card_not_present_new_device, exposure $59.67 across 1 transaction(s).",
-    "written_to_graph": false,
-    "graph_case_id": ""
+    "summary": "Case HHG-016 was opened on 2016-12-12 after customer C09988 reported transaction 3534820 for $59.67 as unauthorized. The transaction was an online purchase from a Windows device using Edge 16.0, which was identified as a new device for this card. Although the amount was consistent with the cardholder's 95th percentile for online spending, the customer confirmed they did not make the purchase. Under policy R2, the card was blocked and the case was closed as fraud. No regulatory report is recommended because the exposure is under $1,000 and there is no evidence of a shared device profile.",
+    "written_to_graph": true,
+    "graph_case_id": "INV-HHG-016"
   },
   "evidence_requests": [
     {
@@ -116,7 +132,7 @@
     "activity_dates": []
   },
   "stop_reason": "The verification response settled the question (policy 6).",
-  "tool_calls": 6,
-  "tokens": 0,
-  "latency_s": 0.09
+  "tool_calls": 12,
+  "tokens": 4719,
+  "latency_s": 25.72
 }

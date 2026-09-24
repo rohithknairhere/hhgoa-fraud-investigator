@@ -51,6 +51,12 @@
         "source": "customer",
         "ref": "evidence_request:1",
         "entity_ids": []
+      },
+      {
+        "claim": "Policy rule R3 recommends closing the case with no fraud when the customer confirms the transaction, which occurred in this case.",
+        "source": "document",
+        "ref": "KC-0007 (R3)",
+        "entity_ids": []
       }
     ],
     "similar_prior_cases": [
@@ -58,9 +64,9 @@
       "CC-5558",
       "CC-5441"
     ],
-    "summary": "Customer report on 3491361 ($39.08, in_person). Initial fraud probability 0.02; after the customer validation it is 0.02. Verdict legitimate.",
-    "written_to_graph": false,
-    "graph_case_id": ""
+    "summary": "Case HHG-018 was opened on 2016-11-27 following a customer report from C02354 disputing a $39.08 purchase (transaction 3491361) on card C02354-K2. The customer subsequently confirmed the purchase, which aligns with the card's historical activity. Evidence shows the transaction amount is significantly below the card's typical in-person purchase values, and the billing region is frequently used by the cardholder. The decision is legitimate, and the case is closed with no fraud identified and no exposure.",
+    "written_to_graph": true,
+    "graph_case_id": "INV-HHG-018"
   },
   "evidence_requests": [
     {
@@ -110,7 +116,7 @@
     "activity_dates": []
   },
   "stop_reason": "The verification response settled the question (policy 6).",
-  "tool_calls": 5,
-  "tokens": 0,
-  "latency_s": 0.09
+  "tool_calls": 8,
+  "tokens": 2963,
+  "latency_s": 44.36
 }

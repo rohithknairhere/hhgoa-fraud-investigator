@@ -62,6 +62,18 @@
         "source": "customer",
         "ref": "evidence_request:1",
         "entity_ids": []
+      },
+      {
+        "claim": "Policy R7 applies because the customer disputed a charge that matches their own recurring pattern of the same merchant and amount.",
+        "source": "document",
+        "ref": "KC-0011 (R7)",
+        "entity_ids": []
+      },
+      {
+        "claim": "Policy R3 justifies closing the case as no fraud because the customer confirmed the transaction after being shown their history.",
+        "source": "document",
+        "ref": "KC-0007 (R3)",
+        "entity_ids": []
       }
     ],
     "similar_prior_cases": [
@@ -69,9 +81,9 @@
       "CC-4957",
       "CC-3682"
     ],
-    "summary": "Customer report on 3530164 ($49.00, in_person). Initial fraud probability 0.01; after the customer validation it is 0.01. Verdict legitimate.",
-    "written_to_graph": false,
-    "graph_case_id": ""
+    "summary": "Case HHG-003 was opened on 2016-12-10 after customer C08623 disputed transaction 3530164 for $49.00. Investigation of card C08623-K2 showed the same amount for product W appeared 60 times previously, including charges on 2016-11-30 and 2016-12-05. The billing region 330 is also consistent with the cardholder's history of 24 transactions in the last 90 days. Upon being shown these identical prior charges, the customer recognized the recurring purchase. Per policy R3 and R7, the case is closed as legitimate with no fraud found.",
+    "written_to_graph": true,
+    "graph_case_id": "INV-HHG-003"
   },
   "evidence_requests": [
     {
@@ -131,7 +143,7 @@
     "activity_dates": []
   },
   "stop_reason": "The verification response settled the question (policy 6).",
-  "tool_calls": 5,
-  "tokens": 0,
-  "latency_s": 0.08
+  "tool_calls": 8,
+  "tokens": 3254,
+  "latency_s": 15.8
 }

@@ -52,15 +52,33 @@
         "source": "customer",
         "ref": "evidence_request:1",
         "entity_ids": []
+      },
+      {
+        "claim": "The initial action to verify with the customer is consistent with policy R1, which advises verification for ambiguous online purchases where the probability rests on weak or single signals.",
+        "source": "document",
+        "ref": "KC-0001 (Pattern 2: Card-not-present fraud)",
+        "entity_ids": []
+      },
+      {
+        "claim": "The identified pattern of a card-not-present purchase from a new device is a documented fraud pattern, characterized by online purchases from a device marked as new for the account.",
+        "source": "document",
+        "ref": "KC-0002 (Pattern 3: Card-not-present fraud from a new device)",
+        "entity_ids": []
+      },
+      {
+        "claim": "The bank's risk score and classifier score are considered signals for investigation, not definitive verdicts, which supports the uncertain decision in this case.",
+        "source": "document",
+        "ref": "KC-0024 (0. What the agent starts with)",
+        "entity_ids": []
       }
     ],
     "similar_prior_cases": [
       "CC-4743",
       "CC-4501"
     ],
-    "summary": "Customer report on 3583368 ($131.30, online). Initial fraud probability 0.36; after the customer validation it is 0.36. Verdict uncertain.",
-    "written_to_graph": false,
-    "graph_case_id": ""
+    "summary": "Customer C11923 reported an unauthorized $131.30 online purchase (transaction 3583368) on card C11923-K2. Evidence shows the purchase was made from a new device (SM-G610F) and exceeded the card's 95th percentile for online purchases. The bank's risk score was 0.39, and the classifier scored it 0.16. The customer could not confirm or deny the transaction within 24 hours. The verdict is uncertain, and the case has been escalated to an analyst. Transaction 3583368 was declined, and the card is under monitoring.",
+    "written_to_graph": true,
+    "graph_case_id": "INV-HHG-011"
   },
   "evidence_requests": [
     {
@@ -120,7 +138,7 @@
     "activity_dates": []
   },
   "stop_reason": "No reply received; further automated steps are unlikely to change the decision, so the case is handed to monitoring/analyst (policy 6).",
-  "tool_calls": 6,
-  "tokens": 0,
-  "latency_s": 0.15
+  "tool_calls": 11,
+  "tokens": 6196,
+  "latency_s": 36.4
 }

@@ -44,15 +44,15 @@
         ]
       },
       {
-        "claim": "Retrieved closed cases: CC-5026 (confirmed_fraud, out_of_region_use, $309.86); CC-2860 (confirmed_fraud, card_not_present_fraud, $149.92); CC-0071 (confirmed_fraud, card_not_present_new_device, $47.19); CC-0110 (confirmed_fraud, card_not_present_new_device, $83.79); CC-0123 (confirmed_fraud, card_not_present_new_device, $200.02)",
+        "claim": "Retrieved closed cases: CC-5026 (confirmed_fraud, out_of_region_use, $309.86); CC-2860 (confirmed_fraud, card_not_present_fraud, $149.92); CC-5553 (confirmed_fraud, card_not_present_fraud, $191.94); CC-5552 (confirmed_fraud, card_not_present_fraud, $94.78); CC-5548 (confirmed_fraud, card_not_present_fraud, $150.08)",
         "source": "graph",
         "ref": "query:similar_closed_cases",
         "entity_ids": [
           "CC-5026",
           "CC-2860",
-          "CC-0071",
-          "CC-0110",
-          "CC-0123"
+          "CC-5553",
+          "CC-5552",
+          "CC-5548"
         ]
       },
       {
@@ -60,18 +60,36 @@
         "source": "customer",
         "ref": "evidence_request:1",
         "entity_ids": []
+      },
+      {
+        "claim": "Policy R2 recommends blocking the card and creating a case when the customer denies the transaction, and also filing a report if the case connects to a shared device profile or another card's fraud.",
+        "source": "document",
+        "ref": "KC-0006 (R2)",
+        "entity_ids": []
+      },
+      {
+        "claim": "Pattern 2, Card-not-present fraud, describes online purchases made without the physical card, which is consistent with the nature of transaction 3503878.",
+        "source": "document",
+        "ref": "KC-0001 (Pattern 2: Card-not-present fraud)",
+        "entity_ids": []
+      },
+      {
+        "claim": "General guidance in KC-0023 emphasizes that a device profile shared across many cards is worth a look, supporting the investigation and monitoring of connected cards.",
+        "source": "document",
+        "ref": "KC-0023 (Things to know)",
+        "entity_ids": []
       }
     ],
     "similar_prior_cases": [
       "CC-5026",
       "CC-2860",
-      "CC-0071",
-      "CC-0110",
-      "CC-0123"
+      "CC-5553",
+      "CC-5552",
+      "CC-5548"
     ],
-    "summary": "Risk score on 3503878 ($99.92, online). Initial fraud probability 0.73; after the customer validation it is 0.95. Verdict fraud, pattern card_not_present_new_device, exposure $99.92 across 1 transaction(s). 2 other cards share the device profile and are placed under monitoring.",
-    "written_to_graph": false,
-    "graph_case_id": ""
+    "summary": "Case HHG-019, opened 2016-12-01, involved transaction 3503878 for $99.92 on card C07987-K2, which triggered a high risk score of 0.90. Evidence shows this was an online purchase from a new device profile never before seen on this card. The customer, C07987, denied the transaction and confirmed they still hold the card. The device profile used is linked to other cards, C06224-K2 and C11309-K1, suggesting a common actor. Based on the customer denial, new device profile, and links to other cards, the transaction is deemed fraudulent. Card C07987-K2 has been blocked, and connected cards C06224-K2 and C11309-K1 are now under monitoring. A Suspicious Activity Report is being filed.",
+    "written_to_graph": true,
+    "graph_case_id": "INV-HHG-019"
   },
   "evidence_requests": [
     {
@@ -125,7 +143,7 @@
   "sar": {
     "file": true,
     "reason": "R6: shared device profile links other cards",
-    "narrative": "Between 2016-12-01 17:28 and 2016-12-01 17:28, card C07987-K2 held by customer C07987 was used for 1 transaction(s) totalling $99.92: 3503878 ($99.92, online). The investigation was opened on 2016-12-01 after a risk score: \"Real-time model scored transaction 3503878 ($99.92, online) at 0.90. Review and decide.\" The purchases were made online from device profile(s) Windows | other | chrome 61.0 | 1280x720. The cardholder, when contacted, stated they did not make the purchases and still holds the card (response simulated per policy section 5). The same device profile was used on 2 other cards in the period, including C06224-K2, C11309-K1, indicating a common actor across cardholders. The activity matches previously confirmed bank cases CC-5026, CC-2860, CC-0071. This is suspicious because shared device profile links other cards, and the activity is inconsistent with the cardholder's history. Total suspicious amount: $99.92. The card is recommended for blocking and reissue; connected cards are placed under monitoring.",
+    "narrative": "On 2016-12-01, card C07987-K2, held by customer C07987, was used for one online transaction (3503878) totaling $99.92. This transaction was flagged due to a high real-time risk score of 0.90. The purchase was made from a device profile identified as Windows | other | chrome 61.0 | 1280x720, which is a new device never before seen on this card. When contacted, customer C07987 denied making the purchase and confirmed they still possess the physical card. Further investigation revealed that this same device profile was also used on two other cards, C06224-K2 and C11309-K1, indicating a potential common actor across multiple cardholders. This activity is inconsistent with the cardholder's history and matches characteristics of previously confirmed bank fraud cases, including CC-5026 and CC-2860. The total suspicious amount is $99.92. The card C07987-K2 has been blocked, and connected cards C06224-K2 and C11309-K1 are now under monitoring.",
     "subjects": [
       "C07987",
       "C07987-K2",
@@ -140,7 +158,7 @@
     ]
   },
   "stop_reason": "The verification response settled the question (policy 6).",
-  "tool_calls": 7,
-  "tokens": 0,
-  "latency_s": 0.1
+  "tool_calls": 13,
+  "tokens": 5799,
+  "latency_s": 43.4
 }

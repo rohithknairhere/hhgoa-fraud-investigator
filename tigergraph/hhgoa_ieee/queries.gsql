@@ -1,61 +1,74 @@
-// Investigation queries cited in cases/*.json evidence refs.
+// Investigation queries used by the agent (backend/hhgoa/agent.py) and cited in cases/*.json.
 USE GRAPH HHGOA_IEEE
 
-// All transactions on a card in a time window (card testing, bursts, episodes).
-CREATE OR REPLACE QUERY card_window(VERTEX<Card> card_id, DATETIME t0, DATETIME t1) {
-  S = {card_id};
-  T = SELECT t FROM S:c -(MADE>)- Transaction:t WHERE t.ts >= t0 AND t.ts <= t1 ORDER BY t.ts ASC;
-  PRINT T;
+// One transaction with its card, device profile and email domain.
+CREATE OR REPLACE QUERY get_txn(VERTEX<Transaction> txn) FOR GRAPH HHGOA_IEEE {
+  MaxAccum<STRING> @card, @dev, @email;
+  T = {txn};
+  X = SELECT t FROM T:t -(MADE_BY>)- Card:c ACCUM t.@card += c.card_id;
+  X = SELECT t FROM T:t -(FROM_DEVICE>)- DeviceProfile:d ACCUM t.@dev += d.profile;
+  X = SELECT t FROM T:t -(PURCHASER_EMAIL>)- EmailDomain:e ACCUM t.@email += e.domain;
+  PRINT T[T.txn_id, T.ts, T.amount, T.product_cd, T.channel, T.risk_score, T.memory_score, T.addr1, T.id_15, T.id_23, T.m4, T.m6, T.@card AS card_id, T.@dev AS device_profile, T.@email AS email] AS txns;
 }
 
-// Baseline before the alert: channels, amounts, device profiles and regions seen on the card.
-CREATE OR REPLACE QUERY card_history(VERTEX<Card> card_id, DATETIME before_ts) {
-  SumAccum<INT> @@n; AvgAccum @@avg_amt; SetAccum<STRING> @@profiles; MapAccum<STRING, SumAccum<INT>> @@regions;
-  S = {card_id};
-  T = SELECT t FROM S:c -(MADE>)- Transaction:t WHERE t.ts < before_ts ACCUM @@n += 1, @@avg_amt += t.amount;
-  X = SELECT d FROM T:t -(FROM_DEVICE>)- DeviceProfile:d ACCUM @@profiles += d.profile;
-  X = SELECT r FROM T:t -(BILLED_IN>)- BillingRegion:r ACCUM @@regions += (r.addr1 -> 1);
-  PRINT @@n AS txn_count, @@avg_amt AS avg_amount, @@profiles AS device_profiles, @@regions AS regions;
+// All transactions on a card in a time window, oldest first.
+CREATE OR REPLACE QUERY card_window(VERTEX<Card> card, DATETIME t0, DATETIME t1) FOR GRAPH HHGOA_IEEE {
+  MaxAccum<STRING> @dev, @email;
+  S = {card};
+  T = SELECT t FROM S:c -(MADE>)- Transaction:t WHERE t.ts >= t0 AND t.ts <= t1;
+  X = SELECT t FROM T:t -(FROM_DEVICE>)- DeviceProfile:d ACCUM t.@dev += d.profile;
+  X = SELECT t FROM T:t -(PURCHASER_EMAIL>)- EmailDomain:e ACCUM t.@email += e.domain;
+  PRINT T[T.txn_id, T.ts, T.amount, T.product_cd, T.channel, T.risk_score, T.memory_score, T.addr1, T.id_15, T.id_23, T.m4, T.m6, T.@dev AS device_profile, T.@email AS email] AS txns;
 }
 
-// How often a card used a billing region in the window before the alert.
-CREATE OR REPLACE QUERY region_history(VERTEX<Card> card_id, STRING region, DATETIME t0, DATETIME t1) {
-  SumAccum<INT> @@n;
-  S = {card_id};
-  T = SELECT t FROM S:c -(MADE>)- Transaction:t -(BILLED_IN>)- BillingRegion:r
-      WHERE r.addr1 == region AND t.ts >= t0 AND t.ts < t1 ACCUM @@n += 1;
-  PRINT @@n AS uses;
-}
-
-// Other cards that used the same device profile in a window, with proxy flags (shared origin, R6).
-CREATE OR REPLACE QUERY device_neighbors(VERTEX<DeviceProfile> profile, DATETIME t0, DATETIME t1) {
-  SetAccum<VERTEX<Card>> @@cards; MapAccum<STRING, SumAccum<INT>> @@proxy;
+// Every card that used a device profile in a time window, with the transactions.
+CREATE OR REPLACE QUERY device_neighbors(VERTEX<DeviceProfile> profile, DATETIME t0, DATETIME t1) FOR GRAPH HHGOA_IEEE {
+  MaxAccum<STRING> @card;
   S = {profile};
-  T = SELECT t FROM S:d -(DEVICE_OF>)- Transaction:t WHERE t.ts >= t0 AND t.ts <= t1 ACCUM @@proxy += (t.id_23 -> 1);
-  C = SELECT c FROM T:t -(MADE_BY>)- Card:c ACCUM @@cards += c;
-  PRINT @@cards AS cards, @@proxy AS proxy_flags;
+  T = SELECT t FROM S:d -(DEVICE_OF>)- Transaction:t WHERE t.ts >= t0 AND t.ts <= t1;
+  X = SELECT t FROM T:t -(MADE_BY>)- Card:c ACCUM t.@card += c.card_id;
+  PRINT T[T.txn_id, T.ts, T.amount, T.product_cd, T.channel, T.risk_score, T.memory_score, T.addr1, T.id_15, T.id_23, T.m4, T.m6, T.@card AS card_id] AS txns;
 }
 
-// Case memory retrieval: closed cases on the same card, same pattern, or sharing a device profile.
-CREATE OR REPLACE QUERY similar_closed_cases(VERTEX<Card> card_id, STRING pattern, INT k = 5) {
-  SumAccum<DOUBLE> @score;
-  S = {card_id};
-  Same = SELECT k1 FROM S:c -(HAS_CASE>)- ClosedCase:k1 ACCUM k1.@score += 2.0;
-  Dev = SELECT d FROM S:c -(MADE>)- Transaction:t -(FROM_DEVICE>)- DeviceProfile:d;
-  Via = SELECT k2 FROM Dev:d -(DEVICE_OF>)- Transaction:t -(INVOLVED_IN>)- ClosedCase:k2 ACCUM k2.@score += 1.0;
-  All = Same UNION Via;
-  Top = SELECT k3 FROM All:k3 POST-ACCUM IF k3.pattern == pattern THEN k3.@score += 1.0 END
-        ORDER BY k3.@score DESC LIMIT k;
-  PRINT Top[Top.@score];
+// Closed cases opened before a date on this card (case memory by card).
+CREATE OR REPLACE QUERY closed_cases_for_card(VERTEX<Card> card, DATETIME before_ts) FOR GRAPH HHGOA_IEEE {
+  S = {card};
+  C = SELECT k FROM S:c -(HAS_CASE>)- ClosedCase:k WHERE k.opened_at < before_ts;
+  PRINT C AS cases;
 }
 
-// Shared-origin detection over the whole graph: device profiles used by many cards in a window.
-CREATE OR REPLACE QUERY shared_device_profiles(DATETIME t0, DATETIME t1, INT min_cards = 5) {
-  SetAccum<VERTEX<Card>> @cards;
+// Closed cases whose analyst notes mention a phrase (case memory by narrative).
+CREATE OR REPLACE QUERY closed_cases_by_note(STRING phrase, DATETIME before_ts, INT k = 5) FOR GRAPH HHGOA_IEEE {
+  All = {ClosedCase.*};
+  C = SELECT c FROM All:c WHERE c.opened_at < before_ts AND c.analyst_notes LIKE "%" + phrase + "%"
+      ORDER BY c.opened_at DESC LIMIT k;
+  PRINT C AS cases;
+}
+
+// Most recent closed cases with a given pattern (case memory by typology).
+CREATE OR REPLACE QUERY closed_cases_by_pattern(STRING pattern, DATETIME before_ts, INT k = 3) FOR GRAPH HHGOA_IEEE {
+  All = {ClosedCase.*};
+  C = SELECT c FROM All:c WHERE c.pattern == pattern AND c.opened_at < before_ts ORDER BY c.opened_at DESC LIMIT k;
+  PRINT C AS cases;
+}
+
+// Past investigations (ours) that touched the same device profile: memory written by this agent.
+CREATE OR REPLACE QUERY investigations_for_device(VERTEX<DeviceProfile> profile) FOR GRAPH HHGOA_IEEE {
+  S = {profile};
+  C = SELECT k FROM S:d -(DEVICE_IN_CASE>)- InvestigationCase:k;
+  PRINT C AS cases;
+}
+
+// Graph-wide scan: device profiles shared by many cards behind anonymous or hidden proxies (shared origin, R6).
+CREATE OR REPLACE QUERY shared_proxy_devices(DATETIME t0, DATETIME t1, INT min_cards = 5) FOR GRAPH HHGOA_IEEE {
+  SetAccum<STRING> @cards;
   D = {DeviceProfile.*};
   X = SELECT d FROM D:d -(DEVICE_OF>)- Transaction:t -(MADE_BY>)- Card:c
-      WHERE t.ts >= t0 AND t.ts <= t1 ACCUM d.@cards += c HAVING d.@cards.size() >= min_cards;
-  PRINT X[X.@cards.size() AS n_cards];
+      WHERE t.ts >= t0 AND t.ts <= t1 AND (t.id_23 == "IP_PROXY:ANONYMOUS" OR t.id_23 == "IP_PROXY:HIDDEN")
+      ACCUM d.@cards += c.card_id
+      HAVING d.@cards.size() >= min_cards;
+  PRINT X[X.@cards.size() AS n_cards] AS devices;
 }
 
-INSTALL QUERY card_window, card_history, region_history, device_neighbors, similar_closed_cases, shared_device_profiles
+INSTALL QUERY get_txn, card_window, device_neighbors, closed_cases_for_card, closed_cases_by_note,
+  closed_cases_by_pattern, investigations_for_device, shared_proxy_devices

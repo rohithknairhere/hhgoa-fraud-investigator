@@ -37,26 +37,46 @@
         ]
       },
       {
-        "claim": "Retrieved closed cases: CC-2857 (confirmed_fraud, account_takeover, $539.97); CC-2717 (confirmed_fraud, account_takeover, $896.08); CC-0018 (confirmed_fraud, card_not_present_new_device, $150.07); CC-0033 (confirmed_fraud, account_takeover, $374.83)",
+        "claim": "Retrieved closed cases: CC-2857 (confirmed_fraud, account_takeover, $539.97); CC-2717 (confirmed_fraud, account_takeover, $896.08); CC-5557 (confirmed_fraud, card_not_present_fraud, $300.08); CC-5556 (confirmed_fraud, card_not_present_new_device, $400.03); CC-5521 (confirmed_fraud, account_takeover, $730.52)",
         "source": "graph",
         "ref": "query:similar_closed_cases",
         "entity_ids": [
           "CC-2857",
           "CC-2717",
-          "CC-0018",
-          "CC-0033"
+          "CC-5557",
+          "CC-5556",
+          "CC-5521"
         ]
+      },
+      {
+        "claim": "Policy R1 advises against blocking a transaction based on a single weak signal, which aligns with the decision to allow the transaction given the initial risk score of 0.54 and a final fraud probability of 0.04.",
+        "source": "document",
+        "ref": "KC-0005 (R1)",
+        "entity_ids": []
+      },
+      {
+        "claim": "KC-0024 clarifies that a risk score is a reason for review, not a definitive verdict, supporting the agent's decision to evaluate additional evidence beyond the initial risk score.",
+        "source": "document",
+        "ref": "KC-0024 (0. What the agent starts with)",
+        "entity_ids": []
+      },
+      {
+        "claim": "Case CC-0009 serves as a precedent where a transaction with a high model score and a new device was confirmed legitimate by the cardholder, similar to the new device profile observed in this case.",
+        "source": "document",
+        "ref": "KC-0414 (CC-0009 (cleared, none, 158 similar notes))",
+        "entity_ids": []
       }
     ],
     "similar_prior_cases": [
       "CC-2857",
       "CC-2717",
-      "CC-0018",
-      "CC-0033"
+      "CC-5557",
+      "CC-5556",
+      "CC-5521"
     ],
-    "summary": "Risk score on 3523199 ($100.07, online). Initial fraud probability 0.04; no further evidence was needed. Verdict legitimate.",
-    "written_to_graph": false,
-    "graph_case_id": ""
+    "summary": "Case HHG-005 was opened on 2016-12-08 for an online transaction of $100.07 on card C02923-K1, triggered by a bank risk score of 0.54. Evidence showed the transaction amount was well within the card's historical online purchase range, and an independent classifier scored the transaction at 0.01. Although a new iOS device profile was observed, the overall fraud probability was assessed at 0.04. The transaction was deemed legitimate and the case closed, consistent with policy to not block on weak signals.",
+    "written_to_graph": true,
+    "graph_case_id": "INV-HHG-005"
   },
   "evidence_requests": [],
   "next_best_actions": {
@@ -95,7 +115,7 @@
     "activity_dates": []
   },
   "stop_reason": "Fraud probability at or beyond the policy 6 thresholds on at least two independent signals; further steps would not change the decision.",
-  "tool_calls": 6,
-  "tokens": 0,
-  "latency_s": 0.08
+  "tool_calls": 11,
+  "tokens": 4321,
+  "latency_s": 28.32
 }

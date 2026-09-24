@@ -43,14 +43,32 @@
         "source": "customer",
         "ref": "evidence_request:1",
         "entity_ids": []
+      },
+      {
+        "claim": "Policy R2 was followed to block the card and create a case because the customer denied the transaction and the exposure was under $2,500.",
+        "source": "document",
+        "ref": "KC-0006 (R2)",
+        "entity_ids": []
+      },
+      {
+        "claim": "Pattern 2 for card not present fraud applies here as the card number was used online without the cardholder's authorization while they still held the card.",
+        "source": "document",
+        "ref": "KC-0001 (Pattern 2: Card-not-present fraud)",
+        "entity_ids": []
+      },
+      {
+        "claim": "Policy R1 was initially applied to verify the transaction with the customer because the fraud signal was based on a single classifier score.",
+        "source": "document",
+        "ref": "KC-0001 (Pattern 2: Card-not-present fraud)",
+        "entity_ids": []
       }
     ],
     "similar_prior_cases": [
       "CC-5558"
     ],
-    "summary": "Customer report on 3581141 ($30.02, online). Initial fraud probability 0.99; after the customer validation it is 0.95. Verdict fraud, pattern card_not_present_fraud, exposure $30.02 across 1 transaction(s).",
-    "written_to_graph": false,
-    "graph_case_id": ""
+    "summary": "Customer C08299 reported transaction 3581141 for $30.02 as unauthorized on 2016-12-28. The customer confirmed they still possess the physical card and did not authorize the purchase. While the bank risk score was low at 0.28, a specialized classifier scored the transaction at 1.00. Following policy R2, the card was blocked after the customer denied the transaction. The investigation concludes this was card not present fraud with a total exposure of $30.02.",
+    "written_to_graph": true,
+    "graph_case_id": "INV-HHG-009"
   },
   "evidence_requests": [
     {
@@ -100,7 +118,7 @@
     "activity_dates": []
   },
   "stop_reason": "The verification response settled the question (policy 6).",
-  "tool_calls": 5,
-  "tokens": 0,
-  "latency_s": 0.08
+  "tool_calls": 9,
+  "tokens": 3383,
+  "latency_s": 32.19
 }

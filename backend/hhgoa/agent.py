@@ -90,6 +90,16 @@ class GraphMirror:
                 seen.append(x)
         return seen[:5]
 
+    def closed_info(self, ids: list[str]) -> list[dict]:
+        c = self.closed.set_index("case_id")
+        return [{"case_id": i, **c.loc[i][["outcome", "pattern", "exposure_usd", "analyst_notes"]].to_dict()} for i in ids if i in c.index]
+
+    def prior_investigations(self, profile: str) -> list[dict]:
+        return []
+
+    def search_knowledge(self, qv, k: int = 6, sources=None) -> list[dict]:
+        return []
+
 
 # ---------------------------------------------------------------------------------------------
 # Policy helpers
@@ -214,6 +224,13 @@ def investigate(s: S) -> S:
                                 "profile as a multi-cardholder compromise", "source": "graph",
                        "ref": q("device_neighbors", profile=prof.split(' | ')[0], days=30),
                        "entity_ids": sorted(proxied.card_id.unique().tolist())[:15]})
+        prior = [x for x in G.prior_investigations(prof) if x["case_id"] != f"INV-{c['case_id']}"]
+        fnd["prior_fraud_investigations"] = [x for x in prior if x.get("verdict") == "fraud"]
+        if prior:
+            ev.append({"claim": "Case memory: this device profile already appears in our earlier investigation(s) "
+                                + ", ".join(f"{x['case_id']} ({x.get('verdict')}, {x.get('pattern')})" for x in prior),
+                       "source": "graph", "ref": q("investigations_for_device", profile=prof.split(' | ')[0]),
+                       "entity_ids": [x["case_id"] for x in prior]})
         seen_before = prof in set(hist.device_profile.dropna())
         fnd["device_new"] = (str(f.id_15) == "New") and not seen_before
         if f.channel == "online":
@@ -273,6 +290,8 @@ def assess(s: S) -> S:
         z += 2.5; strong = True
     if fnd.get("device_new"):
         z += 0.6
+    if fnd.get("prior_fraud_investigations"):
+        z += 1.0
     if fnd.get("amount_anomaly"):
         z += 0.6
     if fnd.get("out_of_region"):
@@ -333,9 +352,9 @@ def assess(s: S) -> S:
     hint = "just under $500" if "burst500" in fnd else (fnd["profile"].split(" Build")[0] if "ring" in fnd else "")
     similar = G.similar_closed_cases(card, pattern if p >= 0.5 else "none", fnd.get("profile", ""), pd.Timestamp(c["opened_at"]), hint)
     if similar:
-        notes = G.closed.set_index("case_id").loc[similar]
+        info = G.closed_info(similar)
         s["evidence"].append({"claim": "Retrieved closed cases: " + "; ".join(
-            f"{i} ({r.outcome}, {r.pattern}, {money(r.exposure_usd)})" for i, r in notes.iterrows()),
+            f"{r['case_id']} ({r['outcome']}, {r['pattern']}, {money(float(r['exposure_usd'] or 0))})" for r in info),
             "source": "graph", "ref": "query:similar_closed_cases", "entity_ids": similar})
     return {"p_initial": p, "pattern": pattern, "affected": aff, "connected_cards": conn_cards,
             "connected_devices": conn_dev, "similar": similar, "strong": strong, "trace": s["trace"] + ["assess"]}
@@ -563,26 +582,84 @@ def answer(c: dict, s: dict, latency: float, calls: int) -> dict:
 
 
 def main() -> None:
+    import argparse
+
+    ap = argparse.ArgumentParser()
+    ap.add_argument("--source", choices=["tigergraph", "local"], default="tigergraph")
+    ap.add_argument("--no-llm", action="store_true")
+    ap.add_argument("--only", nargs="*")
+    args = ap.parse_args()
+
     global G
     t0 = time.time()
-    G = GraphMirror()
-    print(f"graph mirror loaded in {time.time() - t0:.1f}s; memory model {'on' if G.tx.memory_score.notna().any() else 'off'}")
+    cases = pd.read_parquet(STORE / "case_pack.parquet")
+    if args.source == "tigergraph":
+        from hhgoa.tg_source import TigerGraphSource
+
+        G = TigerGraphSource(cases)
+        print(f"connected to TigerGraph via tigergraph-mcp ({', '.join(G.mcp.tools)}) in {time.time() - t0:.1f}s")
+    else:
+        G = GraphMirror()
+        print(f"local graph mirror loaded in {time.time() - t0:.1f}s")
+    llm = None
+    if not args.no_llm:
+        from hhgoa.llm import Gemini
+
+        llm = Gemini() if Gemini().enabled else None
     graph = build_graph()
     CASES_OUT.mkdir(exist_ok=True)
-    memory = []
-    for c in G.cases.to_dict("records"):
+    if args.source == "tigergraph" and not args.only:
+        # Fresh run: clear our own case memory so each case only sees investigations opened before it.
+        from hhgoa.tg import connect
+
+        connect().delVertices("InvestigationCase")
+    # Investigate in the order the alerts were opened, so case memory only contains earlier cases.
+    order = cases.sort_values("opened_at").to_dict("records")
+    for c in order:
+        if args.only and c["case_id"] not in args.only:
+            continue
         c["flagged_txn_id"] = int(c["flagged_txn_id"])
         G.calls = 0
+        tok0 = llm.tokens if llm else 0
         t = time.time()
         st = graph.invoke({"case": c})
-        ans = answer(c, st, time.time() - t, G.calls)
+        ans = answer(c, st, 0.0, G.calls)
+        if llm:
+            from hhgoa.explain import explain
+
+            try:
+                ex = explain(llm, G, c, ans, ans["sar"]["narrative"])
+                G.calls += 1  # vector search
+                if ex["summary"]:
+                    ans["case"]["summary"] = ex["summary"]
+                if ex["pattern_description"] and ans["case"]["pattern"] == "undocumented":
+                    ans["case"]["pattern_description"] = ex["pattern_description"]
+                if ex["sar_narrative"] and ans["sar"]["file"]:
+                    ans["sar"]["narrative"] = ex["sar_narrative"]
+                ans["case"]["evidence"] += ex["document_evidence"]
+                print(f"   GraphRAG via {ex['model']}: {len(ex['knowledge'])} chunks, policy_consistent={ex['policy_consistent']}"
+                      + (f", rejected ids {ex.get('sar_narrative_rejected_ids') or ex.get('summary_rejected_ids')}" if any(k.endswith('rejected_ids') for k in ex) else ""))
+            except Exception as exc:
+                print("   LLM step skipped:", str(exc)[:160])
+        if args.source == "tigergraph":
+            prof = st["findings"].get("profile") or ""
+            ans["_devices"] = [prof] if prof else []
+            try:
+                ans["case"]["graph_case_id"] = G.write_case(ans, c["card_id"], str(c["flagged_txn_id"]), str(c["opened_at"]))
+                ans["case"]["written_to_graph"] = bool(ans["case"]["graph_case_id"])
+            except Exception as exc:
+                print("   graph write failed:", str(exc)[:160])
+            ans.pop("_devices", None)
+        ans["tool_calls"] = G.calls
+        ans["tokens"] = (llm.tokens - tok0) if llm else 0
+        ans["latency_s"] = round(time.time() - t, 2)
         (CASES_OUT / f"{c['case_id']}.json").write_text(json.dumps(ans, indent=2, default=str), encoding="utf-8")
-        memory.append({"case_id": c["case_id"], "verdict": ans["case"]["verdict"], "pattern": ans["case"]["pattern"],
-                       "affected": ans["case"]["affected_txn_ids"], "devices": ans["case"]["connected_device_profiles"]})
         print(f"{c['case_id']} {c['trigger_type']:<16} p0={st['p_initial']:.2f} p1={st['p_final']:.2f} "
               f"{ans['case']['verdict']:<10} {ans['case']['pattern']:<28} exp={ans['case']['exposure_usd']:>8} "
-              f"init={[a['action'] for a in ans['next_best_actions']['initial']]} final={[a['action'] for a in ans['next_best_actions']['final']]}")
-    (STORE / "case_memory.json").write_text(json.dumps(memory, indent=2), encoding="utf-8")
+              f"graph={ans['case']['graph_case_id'] or '-'} tok={ans['tokens']} calls={ans['tool_calls']} {ans['latency_s']}s "
+              f"final={[a['action'] for a in ans['next_best_actions']['final']]}")
+    if args.source == "tigergraph":
+        G.mcp.close()
 
 
 if __name__ == "__main__":

@@ -35,14 +35,26 @@
         "entity_ids": [
           "CC-4160"
         ]
+      },
+      {
+        "claim": "The initial high risk score of 0.79 for transaction 3478782 was a reason to look, but not a final verdict, consistent with bank policy.",
+        "source": "document",
+        "ref": "KC-0024 (0. What the agent starts with)",
+        "entity_ids": []
+      },
+      {
+        "claim": "An online purchase with an amount outside the cardholder's usual history, such as this transaction being above the 95th percentile, is considered ambiguous on its own and requires verification.",
+        "source": "document",
+        "ref": "KC-0001 (Pattern 2: Card-not-present fraud)",
+        "entity_ids": []
       }
     ],
     "similar_prior_cases": [
       "CC-4160"
     ],
-    "summary": "Risk score on 3478782 ($292.36, online). Initial fraud probability 0.04; no further evidence was needed. Verdict legitimate.",
-    "written_to_graph": false,
-    "graph_case_id": ""
+    "summary": "Case HHG-002, opened 2016-11-22, concerned online transaction 3478782 for $292.36 on card C11891-K1, which triggered a bank risk score of 0.79. Although the transaction amount exceeded the card's 95th percentile for online purchases, the investigation concluded the transaction was legitimate with a fraud probability of 0.04. This decision was based on a classifier score of 0.01 and the final fraud probability being at or below 0.15 on two independent signals. Initial and final actions were to allow the transaction and close the case as legitimate, consistent with Policy 6. A prior confirmed card-not-present fraud (CC-4160) on the same card was noted, but did not change the verdict for this specific transaction. No suspicious activity report was recommended.",
+    "written_to_graph": true,
+    "graph_case_id": "INV-HHG-002"
   },
   "evidence_requests": [],
   "next_best_actions": {
@@ -81,7 +93,7 @@
     "activity_dates": []
   },
   "stop_reason": "Fraud probability at or beyond the policy 6 thresholds on at least two independent signals; further steps would not change the decision.",
-  "tool_calls": 5,
-  "tokens": 0,
-  "latency_s": 0.06
+  "tool_calls": 8,
+  "tokens": 4359,
+  "latency_s": 61.46
 }
