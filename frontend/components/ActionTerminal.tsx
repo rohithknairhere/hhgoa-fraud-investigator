@@ -2,95 +2,70 @@
 
 import { useState } from "react";
 
-import type { ActionCode, ExecutionReceipt } from "@/lib/types";
+import { ACTION_META, ROUTE_LABEL } from "@/lib/actions";
+import type { RecommendedAction } from "@/lib/types";
 
-import { ActionBadge } from "./ui";
+type State = "pending" | "executed" | "awaiting";
 
-type Status = { kind: "idle" } | { kind: "running" } | { kind: "done"; receipt: ExecutionReceipt } | { kind: "error"; message: string };
+// The agent may only execute auto-route actions itself. L1 and L2 actions are sent for human
+// approval, as the fraud policy requires. Execution here is simulated.
+export function ActionTerminal({ actions }: { actions: RecommendedAction[] }) {
+  const [state, setState] = useState<Record<number, State>>({});
+  const [ran, setRan] = useState(false);
 
-export function ActionTerminal({
-  caseId,
-  action,
-  rationale,
-  sarRequired,
-}: {
-  caseId: string;
-  action: ActionCode;
-  rationale: string;
-  sarRequired: boolean;
-}) {
-  const [status, setStatus] = useState<Status>({ kind: "idle" });
-
-  async function execute() {
-    setStatus({ kind: "running" });
-    try {
-      const res = await fetch(`/api/cases/${caseId}/execute`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ action }),
-      });
-      const body = await res.json();
-      if (!res.ok) throw new Error(body.detail || body.error || `Request failed (${res.status})`);
-      setStatus({ kind: "done", receipt: body as ExecutionReceipt });
-      (window as unknown as { hhgoaAnalytics?: { track?: (n: string, p?: object) => void } }).hhgoaAnalytics?.track?.(
-        "nba_executed",
-        { caseId, action },
-      );
-    } catch (err) {
-      setStatus({ kind: "error", message: err instanceof Error ? err.message : "Execution failed" });
-    }
+  function execute() {
+    const next: Record<number, State> = {};
+    actions.forEach((a, i) => {
+      next[i] = a.route === "auto" ? "executed" : "awaiting";
+    });
+    setState(next);
+    setRan(true);
+    (window as unknown as { hhgoaAnalytics?: { track?: (n: string) => void } }).hhgoaAnalytics?.track?.("nba_executed");
   }
 
-  const done = status.kind === "done";
+  const autoCount = actions.filter((a) => a.route === "auto").length;
   return (
     <div className="space-y-4">
-      <div className="flex flex-wrap items-center gap-3">
-        <span className="eyebrow">Recommended</span>
-        <ActionBadge action={action} size="md" />
-        {sarRequired && <span className="text-sm font-bold text-danger">SAR will be filed</span>}
-      </div>
-      <p className="text-sm text-ink">{rationale}</p>
+      <ol className="space-y-2">
+        {actions.map((a, i) => {
+          const s = state[i] ?? "pending";
+          return (
+            <li key={`${a.action}-${i}`} className="neu-sm flex flex-wrap items-center justify-between gap-2 p-3">
+              <div>
+                <p className="text-sm font-bold text-ink">
+                  {i + 1}. {ACTION_META[a.action]?.label ?? a.action}
+                </p>
+                <p className="text-xs text-ink-muted">
+                  {a.route} ({ROUTE_LABEL[a.route]}) | {a.reason}
+                </p>
+              </div>
+              <span
+                className={`neu-inset rounded-full px-3 py-1 text-xs font-bold ${
+                  s === "executed" ? "text-success" : s === "awaiting" ? "text-warning" : "text-ink-muted"
+                }`}
+              >
+                {s === "executed" ? "Executed" : s === "awaiting" ? `Sent for ${a.route} approval` : "Pending"}
+              </span>
+            </li>
+          );
+        })}
+      </ol>
       <button
         type="button"
         onClick={execute}
-        disabled={status.kind === "running" || done}
-        aria-pressed={done}
+        disabled={ran}
+        aria-pressed={ran}
         className={`focus-ring w-full rounded-3xl bg-surface px-6 py-5 text-lg font-extrabold tracking-tight text-accent transition-shadow duration-150 sm:w-auto ${
-          done ? "shadow-neu-inset" : "shadow-neu-lg hover:shadow-neu active:shadow-neu-inset"
+          ran ? "shadow-neu-inset" : "shadow-neu-lg hover:shadow-neu active:shadow-neu-inset"
         }`}
       >
-        {status.kind === "running" ? "Executing..." : done ? "Next best action executed" : "Execute Next Best Action"}
+        {ran ? "Next best action executed" : "Execute Next Best Action"}
       </button>
-      <div aria-live="polite">
-        {status.kind === "done" && (
-          <dl className="neu-inset grid gap-2 rounded-2xl p-4 text-sm sm:grid-cols-2">
-            <div>
-              <dt className="eyebrow">Execution id</dt>
-              <dd className="font-mono text-ink">{status.receipt.execution_id}</dd>
-            </div>
-            <div>
-              <dt className="eyebrow">Status</dt>
-              <dd className="text-ink">
-                {status.receipt.status}
-                {status.receipt.idempotent_replay ? " (already executed)" : ""}
-              </dd>
-            </div>
-            <div>
-              <dt className="eyebrow">Action</dt>
-              <dd className="text-ink">{status.receipt.label}</dd>
-            </div>
-            <div>
-              <dt className="eyebrow">Executed at</dt>
-              <dd className="font-mono text-ink">{status.receipt.executed_at}</dd>
-            </div>
-          </dl>
-        )}
-        {status.kind === "error" && (
-          <p role="alert" className="neu-inset rounded-2xl p-4 text-sm font-semibold text-danger">
-            {status.message}
-          </p>
-        )}
-      </div>
+      <p className="text-xs text-ink-muted" aria-live="polite">
+        {ran
+          ? `${autoCount} action(s) executed by the agent; ${actions.length - autoCount} sent to a human approver.`
+          : "Only auto-route actions run automatically. L1 and L2 actions wait for a human, per the approval policy."}
+      </p>
     </div>
   );
 }

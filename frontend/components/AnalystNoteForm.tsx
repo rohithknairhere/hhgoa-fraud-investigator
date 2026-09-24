@@ -38,7 +38,7 @@ export function AnalystNoteForm({ caseId }: { caseId: string }) {
       reset();
       setResult({
         ok: true,
-        message: body.stored === false ? "Backend offline: note validated but not persisted." : "Note recorded on the case.",
+        message: body.stored === false ? "Note validated. This demo does not store notes." : "Note recorded on the case.",
       });
     } catch (err) {
       setResult({ ok: false, message: err instanceof Error ? err.message : "Could not save note" });

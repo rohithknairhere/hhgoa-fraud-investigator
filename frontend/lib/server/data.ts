@@ -4,58 +4,18 @@ import { promises as fs } from "fs";
 import path from "path";
 
 import { CASE_ID_PATTERN } from "@/lib/actions";
-import type { CaseSummary, InvestigationRecord } from "@/lib/types";
+import type { Answer, CasePackEntry, CaseView } from "@/lib/types";
 
-// Server-only configuration. No NEXT_PUBLIC_ prefix, so the backend URL never reaches the browser bundle.
-const BACKEND = process.env.BACKEND_API_URL?.replace(/\/$/, "");
-const DATA_DIR = path.join(process.cwd(), "data", "benchmarks");
+import casePack from "@/data/case_pack.json";
 
-export async function backendFetch(pathname: string, init?: RequestInit & { revalidate?: number }) {
-  if (!BACKEND) return null;
-  const isRead = !init?.method || init.method === "GET";
-  try {
-    return await fetch(`${BACKEND}${pathname}`, {
-      ...init,
-      headers: { "Content-Type": "application/json", ...(init?.headers || {}) },
-      signal: AbortSignal.timeout(2500),
-      ...(isRead ? { next: { revalidate: init?.revalidate ?? 30 } } : { cache: "no-store" as const }),
-    });
-  } catch {
-    return null;
-  }
-}
-
-async function readLocal(caseId: string): Promise<InvestigationRecord | null> {
-  if (!CASE_ID_PATTERN.test(caseId)) return null;
-  try {
-    return JSON.parse(await fs.readFile(path.join(DATA_DIR, `${caseId}.json`), "utf-8"));
-  } catch {
-    return null;
-  }
-}
-
-function summarise(r: InvestigationRecord): CaseSummary {
-  return {
-    case_id: r.case_id,
-    title: r.title,
-    typology: r.typology,
-    alert_rule: r.alert.rule,
-    risk_score: r.alert.risk_score,
-    transaction_id: r.alert.transaction_id,
-    status: "investigated",
-    initial_action: r.nba_before_additional_evidence.action,
-    final_action: r.nba_after_additional_evidence.action,
-    p_fraud: r.final_decision.p_fraud,
-    confidence: r.final_decision.confidence,
-    sar_required: r.sar.required,
-  };
-}
+const DATA_DIR = path.join(process.cwd(), "data", "cases");
+const PACK = casePack as CasePackEntry[];
 
 export async function listCaseIds(): Promise<string[]> {
   try {
     const files = await fs.readdir(DATA_DIR);
     return files
-      .filter((f) => /^HHGOA-\d{3}\.json$/.test(f))
+      .filter((f) => /^HHG-\d{3}\.json$/.test(f))
       .map((f) => f.replace(".json", ""))
       .sort();
   } catch {
@@ -63,23 +23,20 @@ export async function listCaseIds(): Promise<string[]> {
   }
 }
 
-export async function getCaseSummaries(): Promise<{ cases: CaseSummary[]; source: "live" | "snapshot" }> {
-  const res = await backendFetch("/api/cases");
-  if (res?.ok) {
-    const body = (await res.json()) as { cases: CaseSummary[] };
-    return { cases: body.cases, source: "live" };
+export async function getCase(caseId: string): Promise<CaseView | null> {
+  if (!CASE_ID_PATTERN.test(caseId)) return null;
+  const pack = PACK.find((p) => p.case_id === caseId);
+  if (!pack) return null;
+  try {
+    const answer = JSON.parse(await fs.readFile(path.join(DATA_DIR, `${caseId}.json`), "utf-8")) as Answer;
+    return { pack, answer };
+  } catch {
+    return null;
   }
-  const ids = await listCaseIds();
-  const records = (await Promise.all(ids.map(readLocal))).filter(Boolean) as InvestigationRecord[];
-  return { cases: records.map(summarise), source: "snapshot" };
 }
 
-export async function getCase(
-  caseId: string,
-): Promise<{ record: InvestigationRecord; source: "live" | "snapshot" } | null> {
-  if (!CASE_ID_PATTERN.test(caseId)) return null;
-  const res = await backendFetch(`/api/cases/${caseId}`, { revalidate: 30 });
-  if (res?.ok) return { record: (await res.json()) as InvestigationRecord, source: "live" };
-  const local = await readLocal(caseId);
-  return local ? { record: local, source: "snapshot" } : null;
+export async function getAllCases(): Promise<CaseView[]> {
+  const ids = await listCaseIds();
+  const views = await Promise.all(ids.map(getCase));
+  return views.filter(Boolean) as CaseView[];
 }

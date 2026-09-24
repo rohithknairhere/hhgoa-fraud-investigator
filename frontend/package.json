@@ -3,7 +3,7 @@
   "version": "1.0.0",
   "private": true,
   "scripts": {
-    "sync-data": "node scripts/sync-benchmarks.mjs",
+    "sync-data": "node scripts/sync-cases.mjs",
     "dev": "npm run sync-data && next dev",
     "prebuild": "npm run sync-data",
     "build": "next build",

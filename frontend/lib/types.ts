@@ -1,83 +1,85 @@
-export type ActionCode =
+export type PolicyAction =
   | "ALLOW_TRANSACTION"
-  | "BLOCK_TRANSACTION"
-  | "BLOCK_AND_FILE_SAR"
-  | "ESCALATE_TO_SENIOR_ANALYST"
-  | "MONITOR_ACCOUNT_AND_REQUEST_STEP_UP_AUTH"
-  | "HOLD_AND_REQUEST_ANALYST_REVIEW";
+  | "DECLINE_TRANSACTION"
+  | "MONITOR_CARD"
+  | "MONITOR_CONNECTED_CARDS"
+  | "WARN_CUSTOMER"
+  | "VERIFY_WITH_CUSTOMER"
+  | "STEP_UP_AUTH"
+  | "BLOCK_CARD"
+  | "BLOCK_ALL_CARDS"
+  | "GENERATE_REPORT"
+  | "CREATE_CASE"
+  | "FILE_REPORT"
+  | "ESCALATE_TO_ANALYST"
+  | "CLOSE_NO_FRAUD";
 
-export interface CaseSummary {
+export type Route = "auto" | "L1" | "L2";
+
+export interface RecommendedAction {
+  action: PolicyAction;
+  route: Route;
+  reason: string;
+}
+
+export interface Evidence {
+  claim: string;
+  source: "graph" | "document" | "customer" | "external";
+  ref: string;
+  entity_ids: string[];
+}
+
+export interface CaseRecord {
+  status: "open" | "closed_fraud" | "closed_legitimate" | "escalated";
+  verdict: "fraud" | "legitimate" | "uncertain";
+  fraud_probability: number;
+  pattern: string;
+  pattern_description: string;
+  affected_txn_ids: string[];
+  first_suspicious_txn_id: string;
+  connected_card_ids: string[];
+  connected_device_profiles: string[];
+  exposure_usd: number;
+  evidence: Evidence[];
+  similar_prior_cases: string[];
+  summary: string;
+  written_to_graph: boolean;
+  graph_case_id: string;
+}
+
+export interface Answer {
   case_id: string;
-  title: string;
-  typology: string;
-  alert_rule: string;
-  risk_score: number;
-  transaction_id: string;
-  status: "open" | "investigated" | "executed";
-  initial_action?: ActionCode;
-  final_action?: ActionCode;
-  p_fraud?: number;
-  confidence?: number;
-  sar_required?: boolean;
-}
-
-export interface NextBestAction {
-  action: ActionCode;
-  label: string;
-  terminal: boolean;
-  rationale: string;
-  key_drivers: string[];
-  evidence_request: string | null;
-  phase: "initial" | "updated";
-  round: number;
-  p_fraud: number;
-  confidence: number;
-  logged_at: string;
-}
-
-export interface EvidenceRecord {
-  evidence_id: string;
-  label: string;
-  source: string;
-  tool: string | null;
-  mcp_call_id?: string;
-  summary: string;
-  graph_elements: string[];
-  category?: string;
-  round?: number;
-}
-
-export interface Signal {
-  name: string;
-  direction: "fraud" | "legitimate";
-  contribution: number;
-  description: string;
-  evidence_ids: string[];
-  graph_elements: string[];
-}
-
-export interface TraceStep {
-  step: number;
-  node: string;
-  title: string;
-  started_at: string;
-  duration_ms: number;
-  summary: string;
-  details: Record<string, unknown>;
-}
-
-export interface Assessment {
-  p_fraud: number;
-  confidence: number;
-  round: number;
-  components: {
-    prior_log_odds: number;
-    signal_log_odds: number;
-    decisiveness: number;
-    evidence_coverage: number;
-    signal_conflict: number;
+  case: CaseRecord;
+  evidence_requests: { type: string; asked_after_step: number; assumed_response: string }[];
+  next_best_actions: { initial: RecommendedAction[]; final: RecommendedAction[]; what_changed: string };
+  sar: {
+    file: boolean;
+    reason: string;
+    narrative: string;
+    subjects: string[];
+    total_amount_usd: number;
+    activity_dates: string[];
   };
-  missing_verifications: string[];
+  stop_reason: string;
+  tool_calls: number;
+  tokens: number;
+  latency_s: number;
+}
+
+export interface CasePackEntry {
+  case_id: string;
+  opened_at: string;
+  trigger_type: "risk_score" | "customer_report" | "analyst_request";
+  trigger_text: string;
+  flagged_txn_id: string;
+  card_id: string;
+  customer_id: string;
+  risk_score: number | null;
+}
+
+export interface CaseView {
+  pack: CasePackEntry;
+  answer: Answer;
 }
 
 export interface GraphNode {
@@ -92,53 +94,4 @@ export interface GraphEdge {
   source: string;
   target: string;
   type: string;
-}
-
-export interface InvestigationRecord {
-  case_id: string;
-  title: string;
-  typology: string;
-  generated_at: string;
-  graph_backend: string;
-  planner: string;
-  alert: { case_id: string; transaction_id: string; rule: string; risk_score: number; source: string };
-  investigation_record: {
-    transaction_id: string;
-    customer_id: string;
-    pattern_tags: string[];
-    evidence: EvidenceRecord[];
-    signals: Signal[];
-    assessments: Assessment[];
-    nba_log: NextBestAction[];
-    trace: TraceStep[];
-    mcp_tool_calls: { call_id: string; tool: string; ok: boolean; latency_ms: number }[];
-    graph_context: Record<string, unknown> & { view: { nodes: GraphNode[]; edges: GraphEdge[] } };
-  };
-  nba_before_additional_evidence: NextBestAction;
-  additional_evidence_requested: boolean;
-  additional_evidence: { category: string; source: string; description: string; evidence_id: string }[];
-  nba_after_additional_evidence: NextBestAction;
-  final_decision: {
-    action: ActionCode;
-    label: string;
-    p_fraud: number;
-    confidence: number;
-    rationale: string;
-    justification: Signal[];
-    evidence_cited: EvidenceRecord[];
-    sar_required: boolean;
-  };
-  sar: { required: boolean; narrative: string | null; suspicious_amount?: number; filing_type?: string };
-  benchmark: { expected_final_action: string; passed: boolean };
-}
-
-export interface ExecutionReceipt {
-  execution_id: string;
-  case_id: string;
-  action: ActionCode;
-  label: string;
-  executed_at: string;
-  status: string;
-  sar_submitted: boolean;
-  idempotent_replay?: boolean;
 }

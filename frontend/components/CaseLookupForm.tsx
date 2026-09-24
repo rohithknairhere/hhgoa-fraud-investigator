@@ -27,7 +27,7 @@ export function CaseLookupForm() {
       <div className="flex gap-2">
         <input
           id="caseId"
-          placeholder="HHGOA-007"
+          placeholder="HHG-007"
           className="neu-input font-mono sm:w-44"
           aria-invalid={!!errors.caseId}
           aria-describedby={errors.caseId ? "caseId-error" : undefined}

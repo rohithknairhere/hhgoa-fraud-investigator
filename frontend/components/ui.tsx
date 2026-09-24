@@ -1,31 +1,40 @@
-import { ACTION_META, type Tone } from "@/lib/actions";
-import type { ActionCode } from "@/lib/types";
+import { ACTION_META, ROUTE_LABEL, type Tone } from "@/lib/actions";
+import type { RecommendedAction } from "@/lib/types";
 
-const TONE_TEXT: Record<Tone, string> = {
+export const TONE_TEXT: Record<Tone, string> = {
   danger: "text-danger",
   warning: "text-warning",
   success: "text-success",
   accent: "text-accent",
 };
-const TONE_DOT: Record<Tone, string> = {
+export const TONE_DOT: Record<Tone, string> = {
   danger: "bg-danger",
   warning: "bg-warning",
   success: "bg-success",
   accent: "bg-accent",
 };
 
-export function ActionBadge({ action, size = "sm" }: { action?: ActionCode; size?: "sm" | "md" }) {
-  if (!action) return <span className="text-sm text-ink-muted">Pending</span>;
-  const meta = ACTION_META[action];
+export function Pill({ tone, children }: { tone: Tone; children: React.ReactNode }) {
   return (
-    <span
-      className={`neu-inset inline-flex items-center gap-2 rounded-full font-semibold ${TONE_TEXT[meta.tone]} ${
-        size === "md" ? "px-4 py-2 text-sm" : "px-3 py-1 text-xs"
-      }`}
-    >
-      <span aria-hidden="true" className={`h-2 w-2 rounded-full ${TONE_DOT[meta.tone]}`} />
-      {meta.label}
+    <span className={`neu-inset inline-flex items-center gap-2 rounded-full px-3 py-1 text-xs font-semibold ${TONE_TEXT[tone]}`}>
+      <span aria-hidden="true" className={`h-2 w-2 rounded-full ${TONE_DOT[tone]}`} />
+      {children}
     </span>
+  );
+}
+
+export function ActionChip({ a, showReason = false }: { a: RecommendedAction; showReason?: boolean }) {
+  const meta = ACTION_META[a.action] ?? { label: a.action, tone: "accent" as Tone };
+  return (
+    <li className="neu-sm flex flex-col gap-1 p-3">
+      <div className="flex flex-wrap items-center justify-between gap-2">
+        <span className={`text-sm font-bold ${TONE_TEXT[meta.tone]}`}>{meta.label}</span>
+        <span className="neu-inset rounded-full px-2.5 py-0.5 font-mono text-xs font-bold text-ink" title={ROUTE_LABEL[a.route]}>
+          {a.route}
+        </span>
+      </div>
+      {showReason && <p className="text-xs text-ink">{a.reason}</p>}
+    </li>
   );
 }
 

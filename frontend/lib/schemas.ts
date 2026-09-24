@@ -8,7 +8,7 @@ export const caseIdSchema = z
   .string()
   .trim()
   .toUpperCase()
-  .regex(CASE_ID_PATTERN, "Use the format HHGOA-001");
+  .regex(CASE_ID_PATTERN, "Use the format HHG-001");
 
 export const caseLookupSchema = z.object({ caseId: caseIdSchema });
 export type CaseLookupInput = z.infer<typeof caseLookupSchema>;
@@ -31,14 +31,3 @@ export const analystNoteSchema = z.object({
     .refine(noMarkup, "Angle brackets are not allowed"),
 });
 export type AnalystNoteInput = z.infer<typeof analystNoteSchema>;
-
-export const executeSchema = z.object({
-  action: z.enum([
-    "ALLOW_TRANSACTION",
-    "BLOCK_TRANSACTION",
-    "BLOCK_AND_FILE_SAR",
-    "ESCALATE_TO_SENIOR_ANALYST",
-    "MONITOR_ACCOUNT_AND_REQUEST_STEP_UP_AUTH",
-    "HOLD_AND_REQUEST_ANALYST_REVIEW",
-  ]),
-});
