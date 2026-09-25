@@ -49,7 +49,7 @@ case_pack.csv ──► LangGraph workflow ────────────�
 
 ```bash
 cd backend
-python -m venv .venv && .venv/Scripts/pip install -r requirements.txt pandas pyarrow tigergraph-mcp
+python -m venv .venv && .venv/Scripts/pip install -r requirements.txt
 # put the HHGOA_IEEE files in ../dataset and fill backend/.env (TG_HOST, TG_SECRET, TG_GRAPH, GEMINI_API_KEY)
 python -m hhgoa.prepare                     # CSV to Parquet
 python hhgoa/train_memory_model.py          # closed-case classifier (needs lightgbm)
