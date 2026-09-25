@@ -2,7 +2,7 @@
 
 Our entry for the TigerGraph Hacker House Goa challenge. It's an agent that works card fraud alerts on TigerGraph: it pulls the evidence from the graph, decides whether that's enough to act on, asks the customer when it isn't, and recommends what the bank should do and who has to approve it. It follows the fraud policy in the dataset README (rules R1 to R10).
 
-The answers for the 20 benchmark cases are in [`cases/`](cases), one JSON file per case.
+The answers for the 20 benchmark cases are in [`cases/`](cases), one JSON file per case. The demo video is [`demo/hhgoa_demo.mp4`](demo/hhgoa_demo.mp4).
 
 ## What's where
 
