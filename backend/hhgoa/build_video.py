@@ -1,194 +1,190 @@
-"""Render the demo video: HTML slides built from cases/*.json -> Edge headless screenshots ->
-Windows TTS narration -> ffmpeg MP4 at <repo>/demo/hhgoa_demo.mp4.
+"""Render the demo video from the live dashboard.
 
-    python -m hhgoa.build_video     (run from backend/)
+Playwright drives the installed Edge browser to capture the real dashboard (including clicking
+Execute Next Best Action), a few HTML slides explain the architecture, Windows text-to-speech reads
+the narration, and ffmpeg joins everything into <repo>/demo/hhgoa_demo.mp4.
+
+    python -m hhgoa.build_video     (run from backend/, with the dashboard running on localhost:3000)
 """
 
 from __future__ import annotations
 
-import html
 import json
 import subprocess
 import wave
 from pathlib import Path
 
 import imageio_ffmpeg
+from PIL import Image
+from playwright.sync_api import sync_playwright
 
-from hhgoa.paths import CASES_OUT, REPO
+from hhgoa.paths import REPO
 
 OUT = REPO / "demo"
 WORK = OUT / "build"
-EDGE = r"C:\Program Files (x86)\Microsoft\Edge\Application\msedge.exe"
+BASE = "http://localhost:3000"
+W, H = 1280, 720
 
 CSS = """
 body{margin:0;width:1280px;height:720px;background:#e0e5ec;font-family:'Segoe UI',Arial,sans-serif;color:#1e293b;overflow:hidden}
-.wrap{padding:44px 60px}
-.card{background:#e0e5ec;border-radius:26px;box-shadow:-8px -8px 16px #fff,8px 8px 16px #a3b1c6;padding:24px 28px;margin-bottom:18px}
-.inset{background:#e0e5ec;border-radius:16px;box-shadow:inset 4px 4px 8px #a3b1c6,inset -4px -4px 8px #fff;padding:12px 16px}
-h1{font-size:46px;margin:0 0 8px;font-weight:900}
-h2{font-size:34px;margin:0 0 14px;font-weight:800}
-.eyebrow{font-size:15px;letter-spacing:2px;text-transform:uppercase;color:#334155;font-weight:700;margin-bottom:6px}
+.wrap{padding:48px 64px}
+.card{background:#e0e5ec;border-radius:26px;box-shadow:-8px -8px 16px #fff,8px 8px 16px #a3b1c6;padding:22px 26px}
+h1{font-size:50px;margin:0 0 10px;font-weight:900}
+h2{font-size:36px;margin:0 0 18px;font-weight:800}
+.eyebrow{font-size:15px;letter-spacing:2px;text-transform:uppercase;color:#334155;font-weight:700;margin-bottom:8px}
 p,li{font-size:21px;line-height:1.45}
-.grid{display:grid;gap:18px}
-.two{grid-template-columns:1fr 1fr}
-.three{grid-template-columns:1fr 1fr 1fr}
-.tag{display:inline-block;border-radius:999px;padding:4px 12px;font-weight:700;font-size:15px;margin:2px;box-shadow:inset 2px 2px 4px #a3b1c6,inset -2px -2px 4px #fff}
-.fraud{color:#9f1239}.legit{color:#166534}.unc{color:#854d0e}.acc{color:#3730a3}
-table{border-collapse:separate;border-spacing:0 4px;width:100%;font-size:12.5px}
-td,th{padding:6px 6px;text-align:left}
-th{color:#334155;text-transform:uppercase;font-size:12px;letter-spacing:1px}
-tr.row td{background:#e0e5ec;box-shadow:0 2px 4px #b8c2d3}
-.mono{font-family:Consolas,monospace}
-.small{font-size:16px}
+.grid{display:grid;gap:18px}.two{grid-template-columns:1fr 1fr}
+.big{font-size:40px;font-weight:900;font-family:Consolas,monospace}
+.tag{display:inline-block;border-radius:999px;padding:6px 14px;font-weight:700;font-size:17px;margin:3px;color:#3730a3;box-shadow:inset 2px 2px 4px #a3b1c6,inset -2px -2px 4px #fff}
 """
 
 
-def page(body: str) -> str:
+def slide(body: str) -> str:
     return f"<!doctype html><html><head><meta charset='utf-8'><style>{CSS}</style></head><body><div class='wrap'>{body}</div></body></html>"
 
 
-def esc(x) -> str:
-    return html.escape(str(x))
+def fit(src: Path, dst: Path) -> None:
+    """Place a screenshot of any size on a 1280x720 canvas."""
+    im = Image.open(src).convert("RGB")
+    scale = min(W / im.width, H / im.height, 1.0)
+    im = im.resize((int(im.width * scale), int(im.height * scale)), Image.LANCZOS)
+    canvas = Image.new("RGB", (W, H), (224, 229, 236))
+    canvas.paste(im, ((W - im.width) // 2, (H - im.height) // 2))
+    canvas.save(dst)
 
 
-def vclass(v: str) -> str:
-    return {"fraud": "fraud", "legitimate": "legit"}.get(v, "unc")
+def summary_numbers() -> dict:
+    cases = [json.loads(p.read_text(encoding="utf-8")) for p in sorted((REPO / "cases").glob("HHG-*.json"))]
+    mon = json.loads((REPO / "monitoring" / "summary.json").read_text(encoding="utf-8"))
+    ring = json.loads(next((REPO / "monitoring").glob("MON-RING-*.json")).read_text(encoding="utf-8"))
+    return {
+        "fraud": sum(c["case"]["verdict"] == "fraud" for c in cases),
+        "legit": sum(c["case"]["verdict"] == "legitimate" for c in cases),
+        "unc": sum(c["case"]["verdict"] == "uncertain" for c in cases),
+        "changed": sum(c["next_best_actions"]["what_changed"] != "nothing" for c in cases),
+        "sar": sum(c["sar"]["file"] for c in cases),
+        "graph": sum(c["case"]["written_to_graph"] for c in cases),
+        "tokens": sum(c["tokens"] for c in cases),
+        "ring_cards": len(ring["card_ids"]),
+        "bursts": mon["bursts"],
+    }
 
 
-def actions(lst) -> str:
-    return " ".join(f"<span class='tag acc'>{esc(a['action'])} <span style='color:#334155'>({esc(a['route'])})</span></span>" for a in lst)
-
-
-def case_slide(a: dict, title: str) -> str:
-    c = a["case"]
-    ev = "".join(f"<li class='small'>{esc(e['claim'] if len(e['claim']) < 160 else e['claim'][:157] + '...')} <span class='mono' style='color:#334155'>[{esc(e['source'])}]</span></li>" for e in c["evidence"][:4])
-    req = a["evidence_requests"][0]["assumed_response"] if a["evidence_requests"] else "none needed"
-    return page(f"""
-<div class='eyebrow'>{esc(a['case_id'])} · {esc(title)}</div>
-<h2 style='font-size:28px'>{esc(c['summary'].split('. ')[0])}.</h2>
-<div class='grid two'>
- <div class='card'><div class='eyebrow'>Evidence from the graph</div><ul style='margin:0;padding-left:20px'>{ev}</ul></div>
- <div>
-  <div class='card'><div class='eyebrow'>Verdict</div><p style='margin:0'><b class='{vclass(c['verdict'])}'>{esc(c['verdict'])}</b>, pattern <b>{esc(c['pattern'])}</b>, p(fraud) <b>{c['fraud_probability']:.2f}</b>, exposure <b>${c['exposure_usd']:,.2f}</b>, SAR <b>{'yes' if a['sar']['file'] else 'no'}</b></p></div>
-  <div class='card'><div class='eyebrow'>NBA before evidence</div>{actions(a['next_best_actions']['initial'])}
-   <div class='eyebrow' style='margin-top:10px'>Assumed response</div><p class='small' style='margin:0'>{esc(req[:160])}</p>
-   <div class='eyebrow' style='margin-top:10px'>NBA after evidence</div>{actions(a['next_best_actions']['final'])}</div>
- </div>
-</div>""")
-
-
-def build_slides(cases: dict[str, dict]) -> list[tuple[str, str]]:
-    fraud = [a for a in cases.values() if a["case"]["verdict"] == "fraud"]
-    legit = [a for a in cases.values() if a["case"]["verdict"] == "legitimate"]
-    unc = [a for a in cases.values() if a["case"]["verdict"] == "uncertain"]
-    sars = [a for a in cases.values() if a["sar"]["file"]]
-    changed = [a for a in cases.values() if a["next_best_actions"]["what_changed"] != "nothing"]
-    def row(k, a):
-        return (f"<tr class='row'><td class='mono'>{esc(k)}</td><td>{esc(a['case']['pattern'])}</td>"
-                f"<td class='{vclass(a['case']['verdict'])}'><b>{esc(a['case']['verdict'])}</b> {a['case']['fraud_probability']:.2f}</td>"
-                f"<td>{esc(a['next_best_actions']['initial'][0]['action'] if a['next_best_actions']['initial'] else '')}</td>"
-                f"<td>{esc(a['next_best_actions']['final'][0]['action'])}</td></tr>")
-    items = sorted(cases.items())
-    head = "<tr><th>Case</th><th>Pattern</th><th>Verdict, p</th><th>Initial (first)</th><th>Final (first)</th></tr>"
-    rows = (f"<div class='grid two' style='gap:14px'><table>{head}{''.join(row(k, a) for k, a in items[:10])}</table>"
-            f"<table>{head}{''.join(row(k, a) for k, a in items[10:])}</table></div>")
-    slides = [
-        (page("""<div style='height:560px;display:flex;flex-direction:column;justify-content:center'>
-<div class='eyebrow'>TigerGraph × Hacker House Goa</div><h1>HHGOA Fraud Investigator</h1>
-<p style='font-size:28px;max-width:900px'>An agent that investigates fraud alerts on a transaction graph, knows when it needs more evidence, and recommends policy-compliant next best actions with approval routes.</p>
-<div><span class='tag acc'>TigerGraph schema + GSQL</span><span class='tag acc'>MCP tools</span><span class='tag acc'>LangGraph</span><span class='tag acc'>Closed-case memory</span></div></div>"""),
-         "This is the H H G O A Fraud Investigator, built for the TigerGraph Hacker House Goa challenge. "
-         "It is an agent that investigates fraud alerts on a transaction graph, decides when it needs more evidence, "
-         "and recommends next best actions that follow the bank's fraud policy, including who must approve them."),
-        (page("""<h2>The data as a graph</h2><div class='grid three'>
-<div class='card'><div class='eyebrow'>Transactions</div><h1>590,742</h1><p class='small'>All 393 Vesta columns, risk score, channel, real timestamps</p></div>
-<div class='card'><div class='eyebrow'>Identity records</div><h1>144,432</h1><p class='small'>Device profile = DeviceInfo + OS + browser + screen, proxy and New/Found flags</p></div>
-<div class='card'><div class='eyebrow'>Closed cases</div><h1>5,565</h1><p class='small'>4,665 confirmed fraud and 900 cleared: the agent's starting memory</p></div></div>
-<div class='card'><p style='margin:0'>Vertices: Customer, Card, Transaction, DeviceProfile, EmailDomain, BillingRegion, ClosedCase. Card IDs are rebuilt exactly from the data (customer + card type order, 100% match on all 1,933 cards in the closed cases). GSQL queries: card_window, card_history, device_neighbors, region_history, similar_closed_cases.</p></div>"""),
-         "We model the dataset as a graph. Five hundred ninety thousand transactions, a hundred forty four thousand identity records, "
-         "and five thousand five hundred closed cases. Cards link to transactions, transactions link to device profiles, email domains and billing regions, "
-         "and closed cases link back to the transactions they involved. Card identifiers are reconstructed exactly from the data, matching every card named in the closed cases."),
-        (page("""<h2>Architecture</h2><div class='grid two'>
-<div class='card'><div class='eyebrow'>Investigation loop (LangGraph)</div><ol style='margin:0'>
-<li>Trigger: risk score, customer report or analyst request</li><li>Investigate: graph queries on the card, device, region and prior cases</li>
-<li>Assess: fraud probability, pattern, episode, exposure</li><li>Initial next best action with approval route</li>
-<li>Gather evidence: customer validation or step-up (simulated, recorded)</li><li>Final next best action, SAR if policy requires</li><li>Write the case to memory</li></ol></div>
-<div class='card'><div class='eyebrow'>Tools and memory</div><p class='small'>Typed graph queries exposed as MCP tools; the agent never writes raw GSQL.</p>
-<p class='small'>Case memory: similar closed cases retrieved per alert, plus a classifier trained only on the Jul to Oct closed cases using Vesta's unnamed features, cited as such.</p>
-<p class='small'>Policy engine: rules R1 to R10, case versus report (3a), stopping rules (6), approval routes auto, L1, L2.</p></div></div>"""),
-         "The architecture is a LangGraph loop. A trigger opens the investigation. The agent queries the graph for the card's timeline, the device profile and who else used it, "
-         "billing regions, and similar closed cases. It assesses fraud probability and the pattern, logs an initial next best action with its approval route, "
-         "gathers more evidence when the policy requires it, then records the final action and writes the case to memory. "
-         "Graph access goes through typed tools, and case memory includes a classifier trained only on the bank's closed cases."),
-        (page(f"""<h2>Results on the 20 benchmark cases</h2>
-<div class='grid three' style='margin-bottom:10px'><div class='inset'><b class='fraud'>{len(fraud)}</b> fraud · <b class='legit'>{len(legit)}</b> legitimate · <b class='unc'>{len(unc)}</b> uncertain</div>
-<div class='inset'><b>{len(changed)}</b> cases changed their recommendation after evidence</div><div class='inset'><b>{len(sars)}</b> suspicious activity reports</div></div>
-{rows}"""),
-         f"Here are all twenty cases. The agent found {len(fraud)} fraud cases, {len(legit)} legitimate and {len(unc)} it honestly marks as uncertain. "
-         f"In {len(changed)} cases the recommendation changed after more evidence came in, and {len(sars)} cases need a suspicious activity report. "
-         "An agent that blocks everything scores badly here, so most alerts are verified before anything is blocked."),
+def segments(n: dict) -> list[tuple[str, object, str]]:
+    return [
+        ("html", slide("""<div style='height:600px;display:flex;flex-direction:column;justify-content:center'>
+<div class='eyebrow'>TigerGraph | Hacker House Goa</div><h1>HHGOA Fraud Investigator</h1>
+<p style='font-size:27px;max-width:950px'>An agent that investigates card fraud alerts on TigerGraph, knows when it needs more evidence, and recommends next best actions under the bank's fraud policy, with the approval each action needs.</p>
+<div><span class='tag'>TigerGraph Savanna</span><span class='tag'>TigerGraph MCP</span><span class='tag'>GSQL + graph algorithms</span><span class='tag'>GraphRAG with vector search</span><span class='tag'>LangGraph</span><span class='tag'>Gemini</span></div></div>"""),
+         "This is our fraud investigation agent for the TigerGraph Hacker House Goa challenge. It investigates each alert on a TigerGraph graph, "
+         "decides whether it has enough evidence to act, and recommends next best actions under the bank's fraud policy, including who has to approve them."),
+        ("html", slide("""<h2>How it fits together</h2><div class='grid two'>
+<div class='card'><div class='eyebrow'>Graph on TigerGraph Savanna</div><p>590,742 transactions, 14,317 cards, 9,700 device profiles, 5,565 closed cases.</p>
+<p>Knowledge chunks for the policy, the patterns and closed case narratives, each with a vector.</p><p>Every finished case is written back as an InvestigationCase vertex.</p></div>
+<div class='card'><div class='eyebrow'>Agent</div><p>LangGraph workflow: trigger, investigate, assess, initial action, gather evidence, final action, explain, write back.</p>
+<p>Graph access only through the official TigerGraph MCP server, limited to installed queries and case writes.</p><p>Gemini writes summaries and reports from vector-retrieved policy text. Decisions stay with the policy engine.</p></div></div>"""),
+         "Here is the architecture. All the data lives in one graph on TigerGraph Savanna: transactions, cards, device profiles, billing regions and the bank's closed cases. "
+         "The fraud policy, the pattern descriptions and the closed case narratives are stored as vectors in the same graph. "
+         "The agent is a LangGraph workflow. It only reaches the graph through the official TigerGraph MCP server, limited to installed queries and writing cases back. "
+         "Gemini writes the case summaries and reports from text retrieved by vector search, while the decisions stay with the policy engine."),
+        ("page", ("/", None, None),
+         f"This is the analyst dashboard. The agent found {n['fraud']} fraud cases, {n['legit']} legitimate and {n['unc']} it marks as uncertain. "
+         f"{n['changed']} recommendations changed after more evidence came in, {n['sar']} cases need a suspicious activity report, and all {n['graph']} cases were written back to TigerGraph."),
+        ("page", ("/", "ul[aria-label='Benchmark cases']", "viewport"),
+         "Each card is one of the twenty benchmark cases, showing the trigger, the verdict, the fraud probability, the exposure and the next best action."),
+        ("page", ("/cases/HHG-006", "header", None),
+         "Case six started with a customer saying they never made a four hundred and eighty two dollar purchase. The graph shows four online purchases in thirty minutes, "
+         "each just under five hundred dollars. None of the five documented patterns fits, so the agent marks it undocumented and describes it in its own words."),
+        ("page", ("/cases/HHG-006", "#progression", None),
+         "The case progression shows every step. The agent made nine graph and retrieval calls through MCP, retrieved matching closed cases like C C 3748, "
+         "asked the customer to confirm, and recorded the assumed reply before changing its recommendation."),
+        ("page", ("/cases/HHG-006", "#action-terminal", "click"),
+         "This is the action terminal. When the analyst presses execute, the agent runs only the actions it is allowed to run on its own, like opening the case and escalating. "
+         "Blocking the card goes to a team lead, and filing the report goes to a fraud manager, exactly as the policy says."),
+        ("page", ("/cases/HHG-006", "#sar", None),
+         "Because the pattern is undocumented and the exposure is over a thousand dollars, the policy requires a suspicious activity report. "
+         "The narrative is written by the language model from the graph evidence and the retrieved policy text, and any identifier it did not see is rejected."),
+        ("page", ("/cases/HHG-019", "#nba", None),
+         "Case nineteen shows the agent handling uncertainty. The evidence leaned toward fraud at point seven three, but under rule one that is not enough to block, "
+         "so the first recommendation is to verify with the customer. After the assumed denial the probability rises to point nine five and the actions change to a block, a case and a report."),
+        ("page", ("/cases/HHG-001", "header", None),
+         "Not every alert is fraud. Case one had a risk score of point six one, but the card uses that billing region regularly and repeats the same purchase. "
+         "With independent signals on the legitimate side, the agent stops early and closes the alert without bothering the customer."),
+        ("page", ("/cases/HHG-011", "#progression", None),
+         "Case eleven is genuinely ambiguous. The agent assumes no reply within a day, so it monitors the card, declines pending authorizations, "
+         "and escalates to an analyst with the verdict recorded as uncertain."),
+        ("page", ("/cases/HHG-014", "#graph-context", None),
+         "Case fourteen came from an analyst asking about an unusual device. The sub-graph links the flagged card to the device and to twenty four other cards that used it behind an anonymous proxy, "
+         "so the agent monitors every connected card and files a report."),
+        ("html", slide(f"""<h2>Watching beyond the twenty cases</h2><div class='grid two'>
+<div class='card'><div class='eyebrow'>Graph algorithm</div><p class='big'>{n['ring_cards']} cards</p><p>Connected components over cards and proxied device profiles in November and December find one ring around a single Samsung phone profile, the device behind HHG-014.</p></div>
+<div class='card'><div class='eyebrow'>Threshold bursts</div><p class='big'>{n['bursts']} cards</p><p>Three or more purchases between $450 and $500 inside an hour from a new device. One is HHG-006; the other is a card outside the benchmark.</p></div></div>"""),
+         f"The agent also watches the exam period on its own. A connected components query in GSQL, run over cards and proxied device profiles, finds a ring of {n['ring_cards']} cards around one phone. "
+         f"A second scan finds {n['bursts']} cards with bursts just under five hundred dollars, including one that is not in the benchmark. These alerts are saved separately."),
+        ("html", slide(f"""<div style='height:600px;display:flex;flex-direction:column;justify-content:center'>
+<h1>Evidence first, then words</h1><p style='font-size:25px;max-width:1050px'>Every claim cites a graph query, a policy rule or an assumed customer reply. Every action carries its rule and approval route. Twenty answer files are in the repository's cases folder, and all twenty cases are stored in TigerGraph as case memory.</p>
+<p style='font-size:22px'>{n['tokens']:,} Gemini tokens across the twenty cases.</p></div>"""),
+         "To sum up: every claim in a case file points to a graph query, a policy rule or an assumed customer reply, every action carries its rule and approval route, "
+         "and every case is stored in TigerGraph so the next investigation can learn from it. Thanks for watching."),
     ]
-    picks = [("HHG-006", "Undocumented: just-under-$500 burst",
-              "Case six is a customer report. The graph shows four online purchases in thirty minutes, each just under five hundred dollars, from devices new to the account. "
-              "None of the five documented patterns fits, but the agent retrieves closed cases C C 3748 and its siblings, which describe the same shape. "
-              "So it calls the pattern undocumented, describes it in its own words, and after the customer's denial recommends blocking the card with team lead approval, "
-              "opening a case, filing a report with fraud manager approval, and escalating to an analyst."),
-             ("HHG-014", "Undocumented: shared device ring",
-              "Case fourteen came from an analyst. Traversing from the transaction to its device profile shows a Samsung phone behind an anonymous proxy used on many other cards the same month, "
-              "the same profile the bank's closed cases describe. That is a shared-origin ring, so the agent files a report, monitors every connected card, and escalates."),
-             ("HHG-001", "Risk score alone, legitimate",
-              "Case one had a risk score of point six one. The card had used billing region four four four ten times in the last ninety days, the amount repeats the cardholder's own history, "
-              "and the closed-case classifier scores it near zero. With independent evidence on the legitimate side, the agent stops early and closes the alert without contacting the customer."),
-             ("HHG-019", "Verify first, then act",
-              "Case nineteen is an online purchase from a new device. The evidence leans toward fraud at point seven three, but under rule one that is not enough to block, so the agent opens a case and verifies with the customer. "
-              "With the assumed denial the probability rises to point nine five, and the final actions become block, case, and a report, because the same device profile links two other cards with suspected fraud."),
-             ("HHG-011", "Honest uncertainty",
-              "Case eleven is a customer dispute where the evidence is balanced. The agent assumes no reply within twenty four hours, so it follows rule four and rule eight: "
-              "monitor the card, decline pending authorizations with team lead approval, and escalate to an analyst, with the verdict recorded as uncertain.")]
-    for cid, title, narr in picks:
-        if cid in cases:
-            slides.append((case_slide(cases[cid], title), narr))
-    sar_case = next((a for a in cases.values() if a["sar"]["file"]), None)
-    if sar_case:
-        slides.append((page(f"""<div class='eyebrow'>{esc(sar_case['case_id'])} · Suspicious activity report</div><h2>A report that stands on its own</h2>
-<div class='card'><p class='small' style='margin:0'>{esc(sar_case['sar']['narrative'][:1100])}</p></div>
-<div class='inset small'>Reason: {esc(sar_case['sar']['reason'])} · Total ${sar_case['sar']['total_amount_usd']:,.2f} · {esc(' to '.join(sar_case['sar']['activity_dates']))}</div>"""),
-                       "When the policy calls for a report, the agent writes a narrative covering who, what, when, where, how and why it is suspicious, "
-                       "citing the transactions, the devices and the matching closed cases, and it keeps the report consistent with the file report action and its approval route."))
-    slides.append((page("""<div style='height:560px;display:flex;flex-direction:column;justify-content:center'>
-<h1>Explainable, policy-bound, memory-driven</h1><p style='font-size:24px;max-width:1000px'>Every claim cites a graph query, a document rule or an assumed customer response. Every action carries its policy rule and approval route. Answer files for all 20 cases are in the repository's cases folder.</p>
-<p style='font-size:22px'>Next: run on TigerGraph Savanna with vector search over policies and case narratives, and let an LLM write case summaries from the retrieved evidence.</p></div>"""),
-                   "Every claim in a case file cites a graph query, a policy rule, or an assumed customer response, and every action carries its rule and approval route. "
-                   "The answer files for all twenty cases are in the repository. Next, we would run it on TigerGraph Savanna with vector search over the policy and case narratives. Thanks for watching."))
-    return slides
 
 
 def tts(text: str, wav: Path) -> float:
+    txt = wav.with_suffix(".txt")
+    txt.write_text(text, encoding="utf-8")
     ps = ("Add-Type -AssemblyName System.Speech; $s = New-Object System.Speech.Synthesis.SpeechSynthesizer; "
           "$s.SelectVoice('Microsoft Zira Desktop'); $s.Rate = 0; "
-          f"$s.SetOutputToWaveFile('{wav}'); $s.Speak([IO.File]::ReadAllText('{wav.with_suffix('.txt')}')); $s.Dispose()")
-    wav.with_suffix(".txt").write_text(text, encoding="utf-8")
+          f"$s.SetOutputToWaveFile('{wav}'); $s.Speak([IO.File]::ReadAllText('{txt}')); $s.Dispose()")
     subprocess.run(["powershell", "-NoProfile", "-Command", ps], check=True)
     with wave.open(str(wav)) as w:
         return w.getnframes() / w.getframerate()
 
 
+def capture(page, spec, raw: Path) -> None:
+    path, selector, action = spec
+    page.goto(BASE + path, wait_until="networkidle")
+    if selector:
+        loc = page.locator(selector).first
+        loc.scroll_into_view_if_needed()
+        if action == "click":
+            page.get_by_role("button", name="Execute Next Best Action").click()
+            page.wait_for_timeout(400)
+        if action == "viewport":
+            page.evaluate("document.querySelector(\"ul[aria-label='Benchmark cases']\").scrollIntoView()")
+            page.evaluate("window.scrollBy(0, -90)")
+            page.wait_for_timeout(300)
+            page.screenshot(path=str(raw))
+        else:
+            loc.screenshot(path=str(raw))
+    else:
+        page.screenshot(path=str(raw))
+
+
 def main() -> None:
     WORK.mkdir(parents=True, exist_ok=True)
-    cases = {p.stem: json.loads(p.read_text(encoding="utf-8")) for p in sorted(CASES_OUT.glob("HHG-*.json"))}
     ff = imageio_ffmpeg.get_ffmpeg_exe()
+    segs = segments(summary_numbers())
     parts = []
-    for i, (body, narration) in enumerate(build_slides(cases), start=1):
-        htm, png, wav, mp4 = (WORK / f"s{i:02d}{ext}" for ext in (".html", ".png", ".wav", ".mp4"))
-        htm.write_text(body, encoding="utf-8")
-        subprocess.run([EDGE, "--headless=new", "--disable-gpu", "--hide-scrollbars", f"--screenshot={png}",
-                        "--window-size=1280,720", htm.as_uri()], check=True, capture_output=True)
-        dur = tts(narration, wav) + 0.8
-        subprocess.run([ff, "-y", "-loop", "1", "-i", str(png), "-i", str(wav), "-c:v", "libx264", "-tune", "stillimage",
-                        "-pix_fmt", "yuv420p", "-c:a", "aac", "-b:a", "128k", "-t", f"{dur:.2f}", "-vf", "scale=1280:720",
-                        str(mp4)], check=True, capture_output=True)
-        parts.append(mp4)
-        print(f"slide {i}: {dur:.1f}s")
+    with sync_playwright() as p:
+        browser = p.chromium.launch(channel="msedge", headless=True)
+        ctx = browser.new_context(viewport={"width": W, "height": H}, device_scale_factor=1)
+        ctx.add_init_script("try { localStorage.setItem('hhgoa-cookie-consent', 'essential'); } catch (e) {}")
+        page = ctx.new_page()
+        for i, (kind, spec, narration) in enumerate(segs, start=1):
+            raw, png, wav, mp4 = (WORK / f"v{i:02d}{ext}" for ext in ("_raw.png", ".png", ".wav", ".mp4"))
+            if kind == "html":
+                page.set_content(spec)
+                page.screenshot(path=str(raw))
+            else:
+                capture(page, spec, raw)
+            fit(raw, png)
+            dur = tts(narration, wav) + 0.8
+            subprocess.run([ff, "-y", "-loop", "1", "-i", str(png), "-i", str(wav), "-c:v", "libx264", "-tune", "stillimage",
+                            "-pix_fmt", "yuv420p", "-r", "30", "-c:a", "aac", "-b:a", "128k", "-ar", "44100", "-t", f"{dur:.2f}",
+                            str(mp4)], check=True, capture_output=True)
+            parts.append(mp4)
+            print(f"segment {i}: {dur:.1f}s")
+        browser.close()
     lst = WORK / "list.txt"
     lst.write_text("".join(f"file '{p.as_posix()}'\n" for p in parts), encoding="utf-8")
     out = OUT / "hhgoa_demo.mp4"

@@ -10,9 +10,11 @@ const TRIGGER_LABEL = { risk_score: "Risk score", customer_report: "Customer rep
 export function CaseCard({ view }: { view: CaseView }) {
   const { pack, answer } = view;
   const c = answer.case;
-  const first = answer.next_best_actions.initial[0];
-  const last = answer.next_best_actions.final[0];
-  const changed = answer.next_best_actions.what_changed !== "nothing";
+  // Show the first decisive action on each side (opening the case is common to most of them).
+  const decisive = (list: typeof answer.next_best_actions.initial) => list.find((a) => a.action !== "CREATE_CASE") ?? list[0];
+  const first = decisive(answer.next_best_actions.initial);
+  const last = decisive(answer.next_best_actions.final);
+  const changed = answer.next_best_actions.what_changed !== "nothing" && first?.action !== last?.action;
   return (
     <li>
       <Link
@@ -49,7 +51,7 @@ export function CaseCard({ view }: { view: CaseView }) {
         <p className="mt-auto text-xs text-ink">
           <span className="font-semibold text-ink-muted">Next best action: </span>
           {first ? ACTION_META[first.action]?.label : "none"}
-          {changed && last ? <> then <strong>{ACTION_META[last.action]?.label}</strong></> : null}
+          {changed && last ? <>, then <strong>{ACTION_META[last.action]?.label}</strong></> : null}
           {answer.sar.file && <span className="ml-2 font-bold text-danger">SAR</span>}
           {c.written_to_graph && <span className="ml-2 font-semibold text-success">In TigerGraph</span>}
         </p>
