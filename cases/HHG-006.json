@@ -37,7 +37,7 @@
         ]
       },
       {
-        "claim": "Classifier trained on the Jul-Oct closed cases (Vesta V/C/D/M features, unnamed) scores the flagged transaction 0.04; bank risk score was 0.25",
+        "claim": "A model trained on the July to October closed cases, using Vesta's unnamed V, C, D and M columns, scores this transaction 0.04. The bank's own score was 0.25",
         "source": "graph",
         "ref": "model:closed_case_memory_classifier",
         "entity_ids": [
@@ -45,7 +45,7 @@
         ]
       },
       {
-        "claim": "Retrieved closed cases: CC-4124 (confirmed_fraud, undocumented, $1,922.37); CC-4086 (confirmed_fraud, undocumented, $1,871.13); CC-3907 (confirmed_fraud, undocumented, $1,922.65); CC-3841 (confirmed_fraud, undocumented, $1,899.30); CC-3748 (confirmed_fraud, undocumented, $1,905.21)",
+        "claim": "Closed cases pulled for comparison: CC-4124 (confirmed_fraud, undocumented, $1,922.37); CC-4086 (confirmed_fraud, undocumented, $1,871.13); CC-3907 (confirmed_fraud, undocumented, $1,922.65); CC-3841 (confirmed_fraud, undocumented, $1,899.30); CC-3748 (confirmed_fraud, undocumented, $1,905.21)",
         "source": "graph",
         "ref": "query:similar_closed_cases",
         "entity_ids": [
@@ -57,7 +57,7 @@
         ]
       },
       {
-        "claim": "Cardholder states they did not make these purchases and still holds the card (assumed: pattern matches confirmed closed cases of the same type)",
+        "claim": "The cardholder says they did not make these purchases and still has the card. We assumed this because the closed cases with the same pattern were all confirmed fraud.",
         "source": "customer",
         "ref": "evidence_request:1",
         "entity_ids": []
@@ -88,7 +88,7 @@
       "CC-3841",
       "CC-3748"
     ],
-    "summary": "Between 2016-11-21 20:00 and 2016-11-21 20:30, card C07297-K1 was used for four unauthorized online transactions totaling $1,906.07, each priced just under a $500 threshold. The cardholder reported transaction 3476682 as fraudulent, denied making any of the purchases, and confirmed the physical card remained in their possession. It was assumed that the pattern aligns with identical confirmed fraud cases CC-3748, CC-3841, CC-3907, CC-4086, and CC-4124. Card C07297-K1 has been blocked and recommended for reissue, and a suspicious activity report is filed under rules R2 and R9.",
+    "summary": "Between 2016-11-21 20:00 and 2016-11-21 20:30, card C07297-K1 was used for four unauthorized online transactions totaling $1,906.07, each priced just under a $500 threshold. The cardholder reported transaction 3476682 as fraudulent, denied making any of the purchases, and confirmed the physical card remained in their possession. It was assumed that the pattern aligns with identical confirmed fraud cases CC-3748, CC-3841, CC-3907, CC-4086, and CC-4124. We recommend blocking and reissuing card C07297-K1 (team lead approval) and filing a suspicious activity report (fraud manager approval) under rules R2 and R9.",
     "written_to_graph": true,
     "graph_case_id": "INV-HHG-006"
   },
@@ -96,7 +96,7 @@
     {
       "type": "customer_validation",
       "asked_after_step": 4,
-      "assumed_response": "Cardholder states they did not make these purchases and still holds the card (assumed: pattern matches confirmed closed cases of the same type)"
+      "assumed_response": "The cardholder says they did not make these purchases and still has the card. We assumed this because the closed cases with the same pattern were all confirmed fraud."
     }
   ],
   "next_best_actions": {
@@ -104,47 +104,47 @@
       {
         "action": "CREATE_CASE",
         "route": "auto",
-        "reason": "R9/3a: coordinated undocumented abuse, case opened with evidence"
+        "reason": "3a and R9: open a case for a coordinated pattern"
       },
       {
         "action": "DECLINE_TRANSACTION",
         "route": "L1",
-        "reason": "R9: stop further authorizations while the pattern is reviewed"
+        "reason": "R9: stop further charges while the pattern is reviewed"
       },
       {
         "action": "VERIFY_WITH_CUSTOMER",
         "route": "auto",
-        "reason": "R1: confirm with the cardholder before blocking"
+        "reason": "R1: check with the cardholder before blocking"
       }
     ],
     "final": [
       {
         "action": "BLOCK_CARD",
         "route": "L1",
-        "reason": "R2: customer denied; exposure $1,906.07 at or under $2,500"
+        "reason": "R2: the customer denied it, and $1,906.07 is within the $2,500 team lead limit"
       },
       {
         "action": "CREATE_CASE",
         "route": "auto",
-        "reason": "R2/3a"
+        "reason": "R2 and 3a: record the confirmed fraud"
       },
       {
         "action": "FILE_REPORT",
         "route": "L2",
-        "reason": "R9: undocumented coordinated pattern"
+        "reason": "R9: a coordinated pattern outside the documented list"
       },
       {
         "action": "ESCALATE_TO_ANALYST",
         "route": "auto",
-        "reason": "R9: pattern fits no documented typology"
+        "reason": "R9: an analyst should review a pattern the bank hasn't documented"
       }
     ],
-    "what_changed": "Assumed response (Cardholder states they did not make these purchases and still holds the card) left fraud probability at 0.90; with the verification step resolved, the recommendation moved from verification to the actions the policy requires."
+    "what_changed": "The customer's reply matched what the graph already showed (fraud probability 0.90), so blocking the card is recommended and the fraud recorded."
   },
   "sar": {
     "file": true,
-    "reason": "R9: undocumented coordinated pattern",
-    "narrative": "This suspicious activity report concerns unauthorized online card transactions associated with customer C07297 on card account C07297-K1. Between 2016-11-21 20:00 and 2016-11-21 20:30, four transactions totaling $1,906.07 were processed in rapid succession: transaction 3476602 for $478.95, transaction 3476633 for $456.96, transaction 3476665 for $488.04, and transaction 3476682 for $482.12. The online purchases originated from device profiles Trident/7.0 | Windows 7 | ie 11.0 for desktop | 1920x1080 and iOS Device | iOS 11.2.1 | mobile safari 11.0 | 2208x1242, with one device operating behind a transparent proxy. On 2016-11-22, customer C07297 submitted a report disputing transaction 3476682. When contacted, the cardholder confirmed that they still possessed the physical card and denied initiating any of the four purchases. The activity exhibits deliberate velocity and structured pricing just below a $500 authorization threshold to avoid triggering standard velocity controls. This burst shape matches documented fraud signatures previously confirmed in cases CC-4124, CC-4086, CC-3907, CC-3841, and CC-3748. In accordance with policy rules R2 and R9, card C07297-K1 has been blocked and submitted for reissue, and the total fraudulent exposure of $1,906.07 is reported.",
+    "reason": "R9: a coordinated pattern outside the documented list",
+    "narrative": "This suspicious activity report concerns unauthorized online card transactions associated with customer C07297 on card account C07297-K1. Between 2016-11-21 20:00 and 2016-11-21 20:30, four transactions totaling $1,906.07 were processed in rapid succession: transaction 3476602 for $478.95, transaction 3476633 for $456.96, transaction 3476665 for $488.04, and transaction 3476682 for $482.12. The online purchases originated from device profiles Trident/7.0 | Windows 7 | ie 11.0 for desktop | 1920x1080 and iOS Device | iOS 11.2.1 | mobile safari 11.0 | 2208x1242, with one device operating behind a transparent proxy. On 2016-11-22, customer C07297 submitted a report disputing transaction 3476682. When contacted, the cardholder confirmed that they still possessed the physical card and denied initiating any of the four purchases. The activity exhibits deliberate velocity and structured pricing just below a $500 authorization threshold to avoid triggering standard velocity controls. This burst shape matches documented fraud signatures previously confirmed in cases CC-4124, CC-4086, CC-3907, CC-3841, and CC-3748. In accordance with policy rules R2 and R9, card C07297-K1 is recommended for blocking and reissue, and the total fraudulent exposure of $1,906.07 is reported.",
     "subjects": [
       "C07297",
       "C07297-K1",
@@ -157,7 +157,7 @@
       "2016-11-21"
     ]
   },
-  "stop_reason": "The verification response settled the question (policy 6).",
+  "stop_reason": "The customer's answer settled it (policy 6).",
   "tool_calls": 9,
   "tokens": 3519,
   "latency_s": 12.36

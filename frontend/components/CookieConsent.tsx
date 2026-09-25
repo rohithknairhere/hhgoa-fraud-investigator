@@ -41,8 +41,8 @@ export function CookieConsent() {
     >
       <div className="neu mx-auto flex max-w-4xl flex-col gap-4 p-5 sm:flex-row sm:items-center sm:justify-between">
         <p className="text-sm text-ink">
-          We use one essential storage entry to remember this choice. With your permission we also record anonymous
-          page views (mock analytics, never sent to a third party). See our{" "}
+          We store one setting to remember this choice. If you accept, we also count page views in your browser only;
+          nothing is sent anywhere. Details in the{" "}
           <Link href="/privacy-policy" className="font-semibold text-accent underline underline-offset-4">
             privacy policy
           </Link>

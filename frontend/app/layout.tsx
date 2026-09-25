@@ -10,7 +10,7 @@ import "./globals.css";
 
 export const metadata: Metadata = {
   metadataBase: new URL(SITE.url),
-  title: { default: `${SITE.name} | Agentic graph investigations`, template: `%s | ${SITE.shortName}` },
+  title: { default: `${SITE.name} | Fraud cases on TigerGraph`, template: `%s | ${SITE.shortName}` },
   description: SITE.description,
   applicationName: SITE.name,
   keywords: ["fraud investigation", "TigerGraph", "GraphRAG", "MCP", "LangGraph", "IEEE-CIS", "next best action"],
@@ -29,7 +29,7 @@ export const metadata: Metadata = {
 };
 
 export const viewport: Viewport = {
-  themeColor: "#e0e5ec",
+  themeColor: "#eaf1f1",
   width: "device-width",
   initialScale: 1,
 };
@@ -38,7 +38,6 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
   return (
     <html lang="en">
       <head>
-        {/* Belt-and-braces with the CSP header: upgrade any stray http:// subresource to https://. */}
         {process.env.NODE_ENV === "production" && (
           <meta httpEquiv="Content-Security-Policy" content="upgrade-insecure-requests" />
         )}

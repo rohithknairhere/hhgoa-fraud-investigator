@@ -73,7 +73,7 @@
         ]
       },
       {
-        "claim": "Classifier trained on the Jul-Oct closed cases (Vesta V/C/D/M features, unnamed) scores the flagged transaction 0.02; bank risk score was 0.05",
+        "claim": "A model trained on the July to October closed cases, using Vesta's unnamed V, C, D and M columns, scores this transaction 0.02. The bank's own score was 0.05",
         "source": "graph",
         "ref": "model:closed_case_memory_classifier",
         "entity_ids": [
@@ -81,7 +81,7 @@
         ]
       },
       {
-        "claim": "Retrieved closed cases: CC-5122 (confirmed_fraud, card_not_present_new_device, $321.36); CC-3035 (confirmed_fraud, undocumented, $140.95); CC-2985 (confirmed_fraud, undocumented, $381.40); CC-2971 (confirmed_fraud, undocumented, $108.36); CC-2649 (confirmed_fraud, undocumented, $390.04)",
+        "claim": "Closed cases pulled for comparison: CC-5122 (confirmed_fraud, card_not_present_new_device, $321.36); CC-3035 (confirmed_fraud, undocumented, $140.95); CC-2985 (confirmed_fraud, undocumented, $381.40); CC-2971 (confirmed_fraud, undocumented, $108.36); CC-2649 (confirmed_fraud, undocumented, $390.04)",
         "source": "graph",
         "ref": "query:similar_closed_cases",
         "entity_ids": [
@@ -93,7 +93,7 @@
         ]
       },
       {
-        "claim": "Cardholder states they did not make these purchases and still holds the card (assumed: pattern matches confirmed closed cases of the same type)",
+        "claim": "The cardholder says they did not make these purchases and still has the card. We assumed this because the closed cases with the same pattern were all confirmed fraud.",
         "source": "customer",
         "ref": "evidence_request:1",
         "entity_ids": []
@@ -132,7 +132,7 @@
     {
       "type": "customer_validation",
       "asked_after_step": 4,
-      "assumed_response": "Cardholder states they did not make these purchases and still holds the card (assumed: pattern matches confirmed closed cases of the same type)"
+      "assumed_response": "The cardholder says they did not make these purchases and still has the card. We assumed this because the closed cases with the same pattern were all confirmed fraud."
     }
   ],
   "next_best_actions": {
@@ -140,57 +140,57 @@
       {
         "action": "CREATE_CASE",
         "route": "auto",
-        "reason": "R9/3a: coordinated undocumented abuse, case opened with evidence"
+        "reason": "3a and R9: open a case for a coordinated pattern"
       },
       {
         "action": "DECLINE_TRANSACTION",
         "route": "L1",
-        "reason": "R9: stop further authorizations while the pattern is reviewed"
+        "reason": "R9: stop further charges while the pattern is reviewed"
       },
       {
         "action": "VERIFY_WITH_CUSTOMER",
         "route": "auto",
-        "reason": "R1: confirm with the cardholder before blocking"
+        "reason": "R1: check with the cardholder before blocking"
       },
       {
         "action": "MONITOR_CONNECTED_CARDS",
         "route": "auto",
-        "reason": "R6: other cards share the device profile"
+        "reason": "R6: other cards used the same device"
       }
     ],
     "final": [
       {
         "action": "BLOCK_CARD",
         "route": "L1",
-        "reason": "R2: customer denied; exposure $187.33 at or under $2,500"
+        "reason": "R2: the customer denied it, and $187.33 is within the $2,500 team lead limit"
       },
       {
         "action": "CREATE_CASE",
         "route": "auto",
-        "reason": "R2/3a"
+        "reason": "R2 and 3a: record the confirmed fraud"
       },
       {
         "action": "FILE_REPORT",
         "route": "L2",
-        "reason": "R9: undocumented coordinated pattern"
+        "reason": "R9: a coordinated pattern outside the documented list"
       },
       {
         "action": "MONITOR_CONNECTED_CARDS",
         "route": "auto",
-        "reason": "R6: cards sharing the device profile"
+        "reason": "R6: watch every card that used the same device"
       },
       {
         "action": "ESCALATE_TO_ANALYST",
         "route": "auto",
-        "reason": "R9: pattern fits no documented typology"
+        "reason": "R9: an analyst should review a pattern the bank hasn't documented"
       }
     ],
-    "what_changed": "Assumed response (Cardholder states they did not make these purchases and still holds the card) left fraud probability at 0.90; with the verification step resolved, the recommendation moved from verification to the actions the policy requires."
+    "what_changed": "The customer's reply matched what the graph already showed (fraud probability 0.90), so blocking the card is recommended and the fraud recorded."
   },
   "sar": {
     "file": true,
-    "reason": "R9: undocumented coordinated pattern",
-    "narrative": "Between 2016-11-15 and 2016-11-22, card C13487-K1 was used for two unauthorized online transactions totaling $187.33. The transactions, 3460634 and 3478561, were conducted using a Samsung SM-G935F device profile behind an anonymous proxy. Customer C13487 confirmed they did not authorize these charges and still possesses the physical card. Investigation revealed this specific device profile was used on 24 other cards within a 30 day window, including cards C03676-K2 and C04108-K2. This activity matches the coordinated abuse pattern documented in closed cases CC-2985 and CC-2971. The use of a hidden proxy and the high volume of unrelated cards linked to a single device profile indicate a sophisticated fraud operation. Consequently, the card has been blocked and a report is being filed per policy R9 for undocumented coordinated patterns.",
+    "reason": "R9: a coordinated pattern outside the documented list",
+    "narrative": "Between 2016-11-15 and 2016-11-22, card C13487-K1 was used for two unauthorized online transactions totaling $187.33. The transactions, 3460634 and 3478561, were conducted using a Samsung SM-G935F device profile behind an anonymous proxy. Customer C13487 confirmed they did not authorize these charges and still possesses the physical card. Investigation revealed this specific device profile was used on 24 other cards within a 30 day window, including cards C03676-K2 and C04108-K2. This activity matches the coordinated abuse pattern documented in closed cases CC-2985 and CC-2971. The use of a hidden proxy and the high volume of unrelated cards linked to a single device profile indicate a sophisticated fraud operation. Blocking the card is recommended, and this report is filed under policy R9 for a coordinated pattern outside the documented list.",
     "subjects": [
       "C13487",
       "C13487-K1",
@@ -208,7 +208,7 @@
       "2016-11-22"
     ]
   },
-  "stop_reason": "The verification response settled the question (policy 6).",
+  "stop_reason": "The customer's answer settled it (policy 6).",
   "tool_calls": 10,
   "tokens": 4883,
   "latency_s": 35.58

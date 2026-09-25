@@ -4,80 +4,68 @@ import Link from "next/link";
 import { LegalPage } from "@/components/LegalPage";
 
 export const metadata: Metadata = {
-  title: "Privacy policy",
-  description: "How the HHGOA Fraud Investigator demo handles data, cookies and analytics.",
+  title: "Privacy",
+  description: "What this demo stores, and what it doesn't.",
   alternates: { canonical: "/privacy-policy" },
 };
 
 export default function PrivacyPolicyPage() {
   return (
     <LegalPage
-      title="Privacy policy"
-      updated="24 September 2026"
+      title="Privacy"
+      updated="25 September 2026"
       sections={[
         {
-          heading: "Who we are",
+          heading: "What this is",
           body: (
             <p>
-              HHGOA Fraud Investigator is a hackathon demonstration built for the Hacker House Goa challenge. It
-              investigates simulated alerts over a TigerGraph fraud graph.
+              HHGOA Fraud Desk is a project built for the Hacker House Goa hackathon. It shows how our agent
+              investigated twenty fraud alerts from the HHGOA IEEE-CIS dataset.
             </p>
           ),
         },
         {
-          heading: "Data we process",
+          heading: "The data on this site",
+          body: (
+            <p>
+              Every customer, card, device and transaction shown here comes from an anonymised public dataset. None of
+              it belongs to a real, identifiable person.
+            </p>
+          ),
+        },
+        {
+          heading: "What we keep about you",
           body: (
             <>
               <p>
-                All transactions, cards, devices, IP addresses and customers shown in this application are synthetic.
-                They follow the column layout of the public IEEE-CIS fraud detection dataset but contain no real
-                cardholder or personal data.
+                One setting in your browser&apos;s local storage, to remember your answer to the cookie banner. That&apos;s
+                it. We don&apos;t set tracking or advertising cookies.
               </p>
               <p>
-                If you submit an analyst note, we store the name you enter, your chosen disposition and the note text
-                in the memory of the demo backend. Notes are discarded when the backend restarts.
+                If you click &quot;Accept&quot;, page views and button clicks are counted in your browser&apos;s memory
+                and thrown away when you close the tab. They are never sent to us or anyone else.
+              </p>
+              <p>
+                The analyst note form checks what you type but does not save it anywhere, so please don&apos;t enter
+                personal information in it.
               </p>
             </>
           ),
         },
         {
-          heading: "Cookies and local storage",
-          body: (
-            <p>
-              We store a single essential entry in your browser&apos;s local storage to remember your cookie choice. We
-              set no advertising or cross-site tracking cookies.
-            </p>
-          ),
-        },
-        {
-          heading: "Analytics",
-          body: (
-            <p>
-              The analytics script is a mock. If you select &quot;Accept&quot;, anonymous page-view and button events
-              are queued in your browser&apos;s memory only. Nothing is transmitted to us or any third party. If you
-              select &quot;Essential only&quot;, no events are recorded.
-            </p>
-          ),
-        },
-        {
           heading: "Security",
-          body: (
-            <p>
-              We serve all traffic over HTTPS with HSTS. Our API rejects plaintext HTTP and rate-limits every client.
-              Server credentials never reach your browser.
-            </p>
-          ),
+          body: <p>The site is served over HTTPS. Keys and passwords for the graph database never reach your browser.</p>,
         },
         {
-          heading: "Your rights and contact",
+          heading: "Questions",
           body: (
             <p>
-              You can clear your stored choice at any time by clearing this site&apos;s data in your browser. For
-              questions, contact the project team through the Hacker House Goa submission page. See also our{" "}
-              <Link href="/terms-and-conditions" className="font-semibold text-accent underline underline-offset-4">
-                terms and conditions
-              </Link>
-              .
+              Clear this site&apos;s data in your browser to reset your choice at any time. For anything else, reach the
+              team through the Hacker House Goa submission. The{" "}
+              <Link href="/terms-and-conditions" className="font-medium text-accent hover:underline">
+                terms
+              </Link>{" "}
+              cover how the site may be used.
             </p>
           ),
         },

@@ -53,7 +53,7 @@ export function CaseCard({ view }: { view: CaseView }) {
           {first ? ACTION_META[first.action]?.label : "none"}
           {changed && last ? <>, then <strong>{ACTION_META[last.action]?.label}</strong></> : null}
           {answer.sar.file && <span className="ml-2 font-bold text-danger">SAR</span>}
-          {c.written_to_graph && <span className="ml-2 font-semibold text-success">In TigerGraph</span>}
+          {c.written_to_graph && <span className="ml-2 font-semibold text-success">Saved in TigerGraph</span>}
         </p>
       </Link>
     </li>

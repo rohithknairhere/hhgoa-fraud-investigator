@@ -23,7 +23,7 @@
         ]
       },
       {
-        "claim": "$131.30 vs this card's 95th percentile of $107.97 for online purchases over 10280 prior transactions",
+        "claim": "$131.30 against a 95th percentile of $107.97 across this card's 10280 earlier online purchases",
         "source": "graph",
         "ref": "query:card_history(card_id=C11923-K2)",
         "entity_ids": [
@@ -31,7 +31,7 @@
         ]
       },
       {
-        "claim": "Classifier trained on the Jul-Oct closed cases (Vesta V/C/D/M features, unnamed) scores the flagged transaction 0.16; bank risk score was 0.39",
+        "claim": "A model trained on the July to October closed cases, using Vesta's unnamed V, C, D and M columns, scores this transaction 0.16. The bank's own score was 0.39",
         "source": "graph",
         "ref": "model:closed_case_memory_classifier",
         "entity_ids": [
@@ -39,7 +39,7 @@
         ]
       },
       {
-        "claim": "Retrieved closed cases: CC-4743 (cleared, none, $0.00); CC-4501 (confirmed_fraud, card_testing, $1,508.58)",
+        "claim": "Closed cases pulled for comparison: CC-4743 (cleared, none, $0.00); CC-4501 (confirmed_fraud, card_testing, $1,508.58)",
         "source": "graph",
         "ref": "query:similar_closed_cases",
         "entity_ids": [
@@ -48,7 +48,7 @@
         ]
       },
       {
-        "claim": "Customer cannot provide further detail; no confirmation either way within 24 hours",
+        "claim": "The customer can't add anything useful, and there is no confirmation either way within 24 hours.",
         "source": "customer",
         "ref": "evidence_request:1",
         "entity_ids": []
@@ -84,7 +84,7 @@
     {
       "type": "customer_validation",
       "asked_after_step": 4,
-      "assumed_response": "Customer cannot provide further detail; no confirmation either way within 24 hours"
+      "assumed_response": "The customer can't add anything useful, and there is no confirmation either way within 24 hours."
     }
   ],
   "next_best_actions": {
@@ -92,52 +92,52 @@
       {
         "action": "CREATE_CASE",
         "route": "auto",
-        "reason": "3a: a case is opened whenever evidence is requested"
+        "reason": "3a: a case is opened whenever we ask for evidence"
       },
       {
         "action": "VERIFY_WITH_CUSTOMER",
         "route": "auto",
-        "reason": "R1: probability 0.36 rests on weak or single signals; verify before any block"
+        "reason": "R1: at 0.36 the case rests on weak signals, so check with the customer before blocking"
       },
       {
         "action": "MONITOR_CARD",
         "route": "auto",
-        "reason": "Raise monitoring while verification is pending"
+        "reason": "Watch the card closely while we wait for the reply"
       }
     ],
     "final": [
       {
         "action": "CREATE_CASE",
         "route": "auto",
-        "reason": "3a"
+        "reason": "3a: keep the case open while it is unresolved"
       },
       {
         "action": "MONITOR_CARD",
         "route": "auto",
-        "reason": "R4: no reply within 24 hours"
+        "reason": "R4: no reply within 24 hours, so watch the card"
       },
       {
         "action": "DECLINE_TRANSACTION",
         "route": "L1",
-        "reason": "R4: decline pending authorizations"
+        "reason": "R4: hold back any pending authorizations"
       },
       {
         "action": "ESCALATE_TO_ANALYST",
         "route": "auto",
-        "reason": "R8: uncertain verdict with exposure or conflicting evidence"
+        "reason": "R8: the evidence conflicts, so a person should decide"
       }
     ],
-    "what_changed": "Assumed response (Customer cannot provide further detail; no confirmation either way within 24 hours) left fraud probability at 0.36; with the verification step resolved, the recommendation moved from verification to the actions the policy requires."
+    "what_changed": "No reply came back, so the fraud probability stays at 0.36 and the card is watched while an analyst takes over."
   },
   "sar": {
     "file": false,
-    "reason": "No report: verdict is not fraud.",
+    "reason": "No report: the verdict is not fraud.",
     "narrative": "",
     "subjects": [],
     "total_amount_usd": 0,
     "activity_dates": []
   },
-  "stop_reason": "No reply received; further automated steps are unlikely to change the decision, so the case is handed to monitoring/analyst (policy 6).",
+  "stop_reason": "No reply, and nothing else we can check automatically would change the call, so an analyst takes it from here (policy 6).",
   "tool_calls": 11,
   "tokens": 6196,
   "latency_s": 36.4

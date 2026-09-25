@@ -5,7 +5,7 @@ export function SiteFooter() {
     <footer className="mx-auto w-full max-w-7xl px-4 pb-28 sm:px-6 lg:px-8">
       <div className="neu-sm flex flex-col gap-3 px-5 py-4 text-sm text-ink-muted sm:flex-row sm:items-center sm:justify-between">
         <p>
-          Built for Hacker House Goa. Simulated data derived from the IEEE-CIS schema. No real cardholder data is used.
+          Built for Hacker House Goa on the HHGOA IEEE-CIS dataset. The data is anonymised; no real cardholders.
         </p>
         <nav aria-label="Legal">
           <ul className="flex gap-4 font-semibold">

@@ -1,7 +1,7 @@
 """Graph access for the agent through the official TigerGraph MCP server (tigergraph-mcp).
 
 The server is launched over stdio with a tool allowlist (the agent's permissions):
-  run_installed_query  read: the investigation queries in tigergraph/hhgoa_ieee/queries.gsql
+  run_installed_query  read: the investigation queries in tigergraph/queries.gsql
   add_node, add_edge   write: InvestigationCase vertices and their edges (case memory)
   get_node             read: verify a written case
 The agent never sends free-form GSQL.

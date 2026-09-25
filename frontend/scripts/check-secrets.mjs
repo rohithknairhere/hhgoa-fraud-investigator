@@ -12,13 +12,12 @@ if (!existsSync(staticDir)) {
 }
 
 const patterns = [
-  ["server env name", /BACKEND_API_URL|TG_PASSWORD|TG_SECRET|ANTHROPIC_API_KEY/],
-  ["backend origin", /127\.0\.0\.1:8000|localhost:8000/],
-  ["Anthropic key", /sk-ant-[A-Za-z0-9_-]{10,}/],
+  ["server env name", /TG_PASSWORD|TG_SECRET|GEMINI_API_KEY/],
+  ["graph host", /tgcloud\.io/],
+  ["API key", /(?:sk-[A-Za-z0-9_-]{20,}|AIza[0-9A-Za-z_-]{30,})/],
   ["private key", /-----BEGIN (?:RSA |EC )?PRIVATE KEY-----/],
   ["bearer token", /Bearer\s+[A-Za-z0-9._-]{20,}/],
 ];
-if (process.env.BACKEND_API_URL) patterns.push(["configured backend URL", new RegExp(process.env.BACKEND_API_URL.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"))]);
 
 let files = 0;
 let hits = 0;

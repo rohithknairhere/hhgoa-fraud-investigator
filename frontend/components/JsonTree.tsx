@@ -26,7 +26,7 @@ export function JsonTree({ data, label, defaultOpen = false, depth = 0 }: {
       <summary className="focus-ring cursor-pointer rounded font-semibold text-ink">
         {label} <span className="text-ink-muted">{Array.isArray(data) ? `[${entries.length}]` : `{${entries.length}}`}</span>
       </summary>
-      <div className="ml-4 border-l border-slate-400 pl-3">
+      <div className="ml-4 border-l border-line pl-3">
         {entries.map(([k, v]) => (
           <JsonTree key={k} data={v} label={k} depth={depth + 1} />
         ))}

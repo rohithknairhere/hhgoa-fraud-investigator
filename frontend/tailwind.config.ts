@@ -14,6 +14,10 @@ const config: Config = {
         danger: c.danger,
         warning: c.warning,
         success: c.success,
+        teal: c.teal,
+        aqua: c.aqua,
+        deep: c.deep,
+        night: c.night,
       },
       boxShadow: {
         neu: `-6px -6px 12px ${c.surfaceLight}, 6px 6px 12px ${c.surfaceShadow}`,

@@ -8,14 +8,14 @@ import { getAllCases } from "@/lib/server/data";
 import heroImage from "@/public/images/graph-hero.png";
 
 const LOOP = [
-  ["Trigger", "A risk-model score, a customer saying they never made a purchase, or an analyst request opens the investigation."],
-  ["Investigate", "Installed GSQL queries on TigerGraph, called through the TigerGraph MCP server: the card timeline, device profiles, other cards on the same device, billing regions and closed cases."],
-  ["Assess uncertainty", "A fraud probability from a classifier trained on the closed cases, moved by graph evidence. The policy decides what that probability allows."],
-  ["Initial next best action", "Recommended with its approval route before any extra evidence. Weak signals mean verify first (R1)."],
-  ["Gather more evidence", "Customer validation or step-up authentication. The assumed reply is recorded in the case file."],
-  ["Final action and report", "The recommendation updates on the reply. A suspicious activity report is written only when the policy calls for one."],
-  ["Explain", "Policy rules, pattern descriptions and closed-case narratives are retrieved by vector search in TigerGraph and given to Gemini to write the summary and report."],
-  ["Case memory", "The case is written back to TigerGraph as an InvestigationCase vertex linked to its transactions, cards, devices and cited closed cases."],
+  ["Trigger", "A model score, a customer saying they didn't make a purchase, or an analyst asking a question."],
+  ["Look at the graph", "Installed GSQL queries, called through the TigerGraph MCP server: the card's timeline, its devices, other cards on those devices, and the bank's closed cases."],
+  ["Weigh it up", "A fraud probability from a model trained on the closed cases, adjusted by what the graph shows. The fraud policy decides what that number allows."],
+  ["First recommendation", "Made before any extra evidence, with the approval each action needs. One weak signal means check with the customer first (R1)."],
+  ["Ask if needed", "Customer validation or step-up authentication. The reply we assumed is written into the case."],
+  ["Final recommendation", "Updated once the reply is in. A suspicious activity report is written only when the policy calls for one."],
+  ["Explain", "The closest policy rules and past cases are pulled by vector search in TigerGraph and used to write the summary and any report."],
+  ["Remember", "The case is saved back into TigerGraph, linked to its transactions, card, device and the closed cases it relied on."],
 ];
 
 export default async function InboxPage() {
@@ -29,23 +29,22 @@ export default async function InboxPage() {
     <div className="space-y-8">
       <section className="neu grid items-center gap-6 overflow-hidden p-6 sm:p-8 lg:grid-cols-[1.2fr_1fr]" aria-labelledby="inbox-title">
         <div className="space-y-4">
-          <p className="eyebrow">Hacker House Goa | HHGOA IEEE-CIS case pack</p>
+          <p className="eyebrow">HHGOA IEEE-CIS case pack</p>
           <h1 id="inbox-title" className="text-3xl font-black tracking-tight text-ink sm:text-4xl">
-            Case inbox
+            Fraud cases
           </h1>
           <p className="max-w-xl text-base text-ink">
-            The 20 benchmark cases, investigated on TigerGraph by our agent. Each one shows the evidence it found, what
-            it recommended before and after asking for more information, who has to approve each action, and the
-            report when the policy requires one.
+            Twenty alerts from November and December 2016, each investigated on TigerGraph. Open a case to see the
+            evidence, what we recommended before and after asking the customer, and who has to sign off.
           </p>
           <dl className="grid grid-cols-2 gap-3 sm:grid-cols-4">
             {[
               ["Fraud", count("fraud")],
               ["Legitimate", count("legitimate")],
               ["Uncertain", count("uncertain")],
-              ["Changed after evidence", changed],
-              ["SARs", sars],
-              ["Written to TigerGraph", inGraph],
+              ["Changed after asking", changed],
+              ["Reports filed", sars],
+              ["Saved in TigerGraph", inGraph],
             ].map(([k, v]) => (
               <div key={k} className="neu-inset rounded-2xl p-3">
                 <dt className="text-xs font-semibold text-ink-muted">{k}</dt>
@@ -57,7 +56,7 @@ export default async function InboxPage() {
         <div className="neu-inset rounded-3xl p-3">
           <Image
             src={heroImage}
-            alt="Illustration of a transaction graph: a central transaction linked to cards, devices and regions, with suspicious nodes highlighted in red"
+            alt="Drawing of a transaction graph: one transaction in the middle linked to cards and devices, with the suspicious ones marked in red"
             priority
             placeholder="blur"
             sizes="(min-width: 1024px) 40vw, 100vw"
@@ -77,7 +76,7 @@ export default async function InboxPage() {
         ))}
       </ul>
 
-      <Section id="how-it-works" eyebrow="Architecture" title="How the investigation works">
+      <Section id="how-it-works" eyebrow="The process" title="How a case is worked">
         <ol className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
           {LOOP.map(([t, d], i) => (
             <li key={t} className="neu-sm p-4">

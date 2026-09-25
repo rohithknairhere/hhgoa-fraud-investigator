@@ -31,7 +31,17 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   };
 }
 
-const SOURCE_LABEL = { graph: "TigerGraph", document: "Policy / pattern text", customer: "Customer", external: "External" };
+const SOURCE_LABEL = { graph: "Graph", document: "Policy", customer: "Customer", external: "External" };
+
+const HEADLINE: Record<string, string> = {
+  none: "No fraud found",
+  undocumented: "A pattern the bank hasn't documented",
+  card_testing: "Card testing",
+  card_not_present_fraud: "Card-not-present fraud",
+  card_not_present_new_device: "Card-not-present fraud from a new device",
+  out_of_region_use: "Use outside the home region",
+  account_takeover: "Account takeover",
+};
 
 export default async function CasePage({ params }: Props) {
   const v = await getCase(params.caseId);
@@ -41,20 +51,20 @@ export default async function CasePage({ params }: Props) {
   const nba = answer.next_best_actions;
   const graph = caseGraph(v);
   const steps = [
-    { title: "Trigger", body: pack.trigger_text },
-    { title: "Investigate", body: `${answer.tool_calls} graph and retrieval calls through the TigerGraph MCP server; ${c.evidence.filter((e) => e.source === "graph").length} graph findings and ${c.similar_prior_cases.length} closed cases retrieved.` },
-    { title: "Initial next best action", body: nba.initial.map((a) => `${a.action} (${a.route})`).join(", ") },
-    ...answer.evidence_requests.map((r) => ({ title: `Evidence request: ${humanise(r.type)}`, body: `Assumed response: ${r.assumed_response}` })),
-    { title: "Final next best action", body: `${nba.final.map((a) => `${a.action} (${a.route})`).join(", ")}. ${nba.what_changed === "nothing" ? "No change was needed." : nba.what_changed}` },
-    { title: "Stop", body: answer.stop_reason },
-    { title: "Case memory", body: c.written_to_graph ? `Written to TigerGraph as ${c.graph_case_id}, linked to its transactions, card, device and cited closed cases.` : "Not written to the graph." },
+    { title: "Alert", body: pack.trigger_text },
+    { title: "Investigation", body: `${answer.tool_calls} graph and retrieval calls through the TigerGraph MCP server. ${c.evidence.filter((e) => e.source === "graph").length} findings from the graph, ${c.similar_prior_cases.length} closed cases pulled for comparison.` },
+    { title: "First recommendation", body: nba.initial.map((a) => humanise(a.action).toLowerCase()).join(", ") },
+    ...answer.evidence_requests.map((r) => ({ title: `Asked: ${humanise(r.type)}`, body: `Assumed reply: ${r.assumed_response}` })),
+    { title: "Final recommendation", body: nba.final.map((a) => humanise(a.action).toLowerCase()).join(", ") },
+    { title: "Closed out", body: answer.stop_reason },
+    { title: "Saved to the graph", body: c.written_to_graph ? `Stored in TigerGraph as ${c.graph_case_id} for future cases to find.` : "Not saved to the graph." },
   ];
 
   return (
     <article className="space-y-8">
       <nav aria-label="Breadcrumb">
         <Link href="/" className="focus-ring neu-sm inline-flex px-4 py-2 text-sm font-semibold text-ink">
-          Back to case inbox
+          Back to cases
         </Link>
       </nav>
 
@@ -64,34 +74,34 @@ export default async function CasePage({ params }: Props) {
             {pack.case_id} | {humanise(pack.trigger_type)} | opened {pack.opened_at}
           </p>
           <h1 className="text-2xl font-black tracking-tight text-ink sm:text-3xl">
-            {c.pattern === "none" ? "No fraud found" : `${humanise(c.pattern).replace(/^./, (m) => m.toUpperCase())}`} on card {pack.card_id}
+            {HEADLINE[c.pattern] ?? humanise(c.pattern)} on card {pack.card_id}
           </h1>
           <div className="flex flex-wrap gap-2">
             <Pill tone={VERDICT_TONE[c.verdict]}>{c.verdict}</Pill>
             <Pill tone="accent">{humanise(c.status)}</Pill>
-            {answer.sar.file && <Pill tone="danger">SAR filed</Pill>}
-            {c.written_to_graph && <Pill tone="success">In TigerGraph as {c.graph_case_id}</Pill>}
+            {answer.sar.file && <Pill tone="danger">Report recommended</Pill>}
+            {c.written_to_graph && <Pill tone="success">Saved as {c.graph_case_id}</Pill>}
           </div>
           <p className="text-base text-ink">{c.summary}</p>
           <p className="font-mono text-xs text-ink-muted">
-            flagged txn {pack.flagged_txn_id}, customer {pack.customer_id}, {answer.tool_calls} tool calls, {answer.tokens.toLocaleString()} LLM tokens, {answer.latency_s}s
+            flagged txn {pack.flagged_txn_id}, customer {pack.customer_id}, {answer.tool_calls} tool calls, {answer.tokens.toLocaleString()} model tokens, {answer.latency_s}s
           </p>
         </div>
         <div className="space-y-4">
-          {pack.risk_score !== null && <Meter label="Bank risk score (input only)" value={pack.risk_score} tone="warning" />}
-          <Meter label="Agent fraud probability" value={c.fraud_probability} tone="danger" />
+          {pack.risk_score !== null && <Meter label="Bank model score" value={pack.risk_score} tone="warning" />}
+          <Meter label="Our fraud probability" value={c.fraud_probability} tone="danger" />
           <div className="neu-inset rounded-2xl p-3 text-sm text-ink">
             Exposure <strong className="font-mono">{money(c.exposure_usd)}</strong> across {c.affected_txn_ids.length} transaction(s)
           </div>
         </div>
       </header>
 
-      <Section id="action-terminal" eyebrow="Action terminal" title="Final next best actions">
+      <Section id="action-terminal" eyebrow="Next best action" title="What to do now">
         <ActionTerminal actions={nba.final} />
       </Section>
 
       <div className="grid gap-8 lg:grid-cols-2">
-        <Section id="progression" eyebrow="Case progression" title="How the case moved">
+        <Section id="progression" eyebrow="Timeline" title="How the case went">
           <ol className="space-y-3">
             {steps.map((s, i) => (
               <li key={i} className="neu-sm flex gap-3 p-4">
@@ -107,8 +117,8 @@ export default async function CasePage({ params }: Props) {
           </ol>
         </Section>
 
-        <Section id="nba" eyebrow="Uncertainty handling" title="Before and after more evidence">
-          <p className="eyebrow mb-2">Initial</p>
+        <Section id="nba" eyebrow="Uncertainty" title="Before and after asking">
+          <p className="eyebrow mb-2">First</p>
           <ul className="mb-4 space-y-2">
             {nba.initial.map((a, i) => (
               <ActionChip key={i} a={a} showReason />
@@ -127,11 +137,11 @@ export default async function CasePage({ params }: Props) {
         </Section>
       </div>
 
-      <Section id="graph-context" eyebrow="TigerGraph" title="Case sub-graph">
+      <Section id="graph-context" eyebrow="TigerGraph" title="Graph around this case">
         <GraphPanel nodes={graph.nodes} edges={graph.edges} context={answer as unknown as Record<string, unknown>} />
       </Section>
 
-      <Section id="evidence" eyebrow="Explainability" title="Evidence">
+      <Section id="evidence" eyebrow="Why" title="Evidence">
         <div className="overflow-x-auto">
           <table className="w-full min-w-[40rem] border-separate border-spacing-y-2 text-left text-sm">
             <caption className="sr-only">Evidence used for the decision</caption>
@@ -155,13 +165,13 @@ export default async function CasePage({ params }: Props) {
         </div>
         {c.pattern_description && (
           <p className="neu-inset mt-4 rounded-2xl p-4 text-sm text-ink">
-            <strong>Undocumented pattern: </strong>
+            <strong>Pattern not in the bank&apos;s list: </strong>
             {c.pattern_description}
           </p>
         )}
         <div className="mt-4 grid gap-3 sm:grid-cols-3 text-sm">
           <div className="neu-inset rounded-2xl p-3">
-            <p className="eyebrow mb-1">Similar closed cases</p>
+            <p className="eyebrow mb-1">Closed cases used</p>
             <p className="font-mono text-xs text-ink">{c.similar_prior_cases.join(", ") || "none"}</p>
           </div>
           <div className="neu-inset rounded-2xl p-3">
@@ -175,7 +185,7 @@ export default async function CasePage({ params }: Props) {
         </div>
       </Section>
 
-      <Section id="sar" eyebrow="Regulatory filing" title={answer.sar.file ? "Suspicious activity report" : "No report required"}>
+      <Section id="sar" eyebrow="Regulator" title={answer.sar.file ? "Suspicious activity report" : "No report needed"}>
         <p className="mb-3 text-sm text-ink">{answer.sar.reason}</p>
         {answer.sar.file && (
           <>
@@ -187,7 +197,7 @@ export default async function CasePage({ params }: Props) {
         )}
       </Section>
 
-      <Section id="analyst-notes" eyebrow="Human in the loop" title="Analyst review">
+      <Section id="analyst-notes" eyebrow="Review" title="Analyst note">
         <AnalystNoteForm caseId={pack.case_id} />
       </Section>
     </article>

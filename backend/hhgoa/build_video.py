@@ -26,16 +26,18 @@ BASE = "http://localhost:3000"
 W, H = 1280, 720
 
 CSS = """
-body{margin:0;width:1280px;height:720px;background:#e0e5ec;font-family:'Segoe UI',Arial,sans-serif;color:#1e293b;overflow:hidden}
-.wrap{padding:48px 64px}
-.card{background:#e0e5ec;border-radius:26px;box-shadow:-8px -8px 16px #fff,8px 8px 16px #a3b1c6;padding:22px 26px}
-h1{font-size:50px;margin:0 0 10px;font-weight:900}
-h2{font-size:36px;margin:0 0 18px;font-weight:800}
-.eyebrow{font-size:15px;letter-spacing:2px;text-transform:uppercase;color:#334155;font-weight:700;margin-bottom:8px}
-p,li{font-size:21px;line-height:1.45}
-.grid{display:grid;gap:18px}.two{grid-template-columns:1fr 1fr}
-.big{font-size:40px;font-weight:900;font-family:Consolas,monospace}
-.tag{display:inline-block;border-radius:999px;padding:6px 14px;font-weight:700;font-size:17px;margin:3px;color:#3730a3;box-shadow:inset 2px 2px 4px #a3b1c6,inset -2px -2px 4px #fff}
+body{margin:0;width:1280px;height:720px;background:#eaf1f1;font-family:'Segoe UI',Arial,sans-serif;color:#051b1d;overflow:hidden}
+.wrap{padding:52px 68px}
+.card{background:#eaf1f1;border-radius:26px;box-shadow:-8px -8px 16px #fff,8px 8px 16px #c3d2d3;padding:24px 28px}
+.dark{background:#003339;border-radius:26px;padding:28px 32px;color:#fff}
+h1{font-size:52px;margin:0 0 12px;font-weight:800;letter-spacing:-1px}
+h2{font-size:36px;margin:0 0 22px;font-weight:800}
+.eyebrow{font-size:14px;letter-spacing:1.5px;text-transform:uppercase;color:#003339;font-weight:700;margin-bottom:10px}
+p,li{font-size:21px;line-height:1.5}
+.grid{display:grid;gap:22px}.two{grid-template-columns:1fr 1fr}
+.big{font-size:44px;font-weight:800;font-family:Consolas,monospace;color:#00666b}
+.tag{display:inline-block;border-radius:999px;padding:7px 15px;font-weight:700;font-size:17px;margin:4px 6px 0 0;color:#00666b;box-shadow:inset 2px 2px 4px #c3d2d3,inset -2px -2px 4px #fff}
+.aqua{color:#73ffff}
 """
 
 
@@ -48,7 +50,7 @@ def fit(src: Path, dst: Path) -> None:
     im = Image.open(src).convert("RGB")
     scale = min(W / im.width, H / im.height, 1.0)
     im = im.resize((int(im.width * scale), int(im.height * scale)), Image.LANCZOS)
-    canvas = Image.new("RGB", (W, H), (224, 229, 236))
+    canvas = Image.new("RGB", (W, H), (234, 241, 241))
     canvas.paste(im, ((W - im.width) // 2, (H - im.height) // 2))
     canvas.save(dst)
 
@@ -73,7 +75,7 @@ def summary_numbers() -> dict:
 def segments(n: dict) -> list[tuple[str, object, str]]:
     return [
         ("html", slide("""<div style='height:600px;display:flex;flex-direction:column;justify-content:center'>
-<div class='eyebrow'>TigerGraph | Hacker House Goa</div><h1>HHGOA Fraud Investigator</h1>
+<div class='eyebrow'>TigerGraph | Hacker House Goa</div><h1>HHGOA Fraud Desk</h1>
 <p style='font-size:27px;max-width:950px'>An agent that investigates card fraud alerts on TigerGraph, knows when it needs more evidence, and recommends next best actions under the bank's fraud policy, with the approval each action needs.</p>
 <div><span class='tag'>TigerGraph Savanna</span><span class='tag'>TigerGraph MCP</span><span class='tag'>GSQL + graph algorithms</span><span class='tag'>GraphRAG with vector search</span><span class='tag'>LangGraph</span><span class='tag'>Gemini</span></div></div>"""),
          "This is our fraud investigation agent for the TigerGraph Hacker House Goa challenge. It investigates each alert on a TigerGraph graph, "
@@ -88,18 +90,18 @@ def segments(n: dict) -> list[tuple[str, object, str]]:
          "The agent is a LangGraph workflow. It only reaches the graph through the official TigerGraph MCP server, limited to installed queries and writing cases back. "
          "Gemini writes the case summaries and reports from text retrieved by vector search, while the decisions stay with the policy engine."),
         ("page", ("/", None, None),
-         f"This is the analyst dashboard. The agent found {n['fraud']} fraud cases, {n['legit']} legitimate and {n['unc']} it marks as uncertain. "
+         f"This is the dashboard analysts would use. The agent found {n['fraud']} fraud cases, {n['legit']} legitimate and {n['unc']} it marks as uncertain. "
          f"{n['changed']} recommendations changed after more evidence came in, {n['sar']} cases need a suspicious activity report, and all {n['graph']} cases were written back to TigerGraph."),
         ("page", ("/", "ul[aria-label='Benchmark cases']", "viewport"),
-         "Each card is one of the twenty benchmark cases, showing the trigger, the verdict, the fraud probability, the exposure and the next best action."),
-        ("page", ("/cases/HHG-006", "header", None),
+         "Each card is one of the twenty benchmark cases, with the trigger, the verdict, the fraud probability, the money at stake and what the agent recommends."),
+        ("page", ("/cases/HHG-006", "article > header", None),
          "Case six started with a customer saying they never made a four hundred and eighty two dollar purchase. The graph shows four online purchases in thirty minutes, "
          "each just under five hundred dollars. None of the five documented patterns fits, so the agent marks it undocumented and describes it in its own words."),
         ("page", ("/cases/HHG-006", "#progression", None),
-         "The case progression shows every step. The agent made nine graph and retrieval calls through MCP, retrieved matching closed cases like C C 3748, "
+         "The timeline shows how the case moved. The agent made nine graph and retrieval calls through MCP, retrieved matching closed cases like C C 3748, "
          "asked the customer to confirm, and recorded the assumed reply before changing its recommendation."),
         ("page", ("/cases/HHG-006", "#action-terminal", "click"),
-         "This is the action terminal. When the analyst presses execute, the agent runs only the actions it is allowed to run on its own, like opening the case and escalating. "
+         "This is the recommended action list. When the analyst presses execute, the agent runs only the actions it is allowed to run on its own, like opening the case and escalating. "
          "Blocking the card goes to a team lead, and filing the report goes to a fraud manager, exactly as the policy says."),
         ("page", ("/cases/HHG-006", "#sar", None),
          "Because the pattern is undocumented and the exposure is over a thousand dollars, the policy requires a suspicious activity report. "
@@ -107,7 +109,7 @@ def segments(n: dict) -> list[tuple[str, object, str]]:
         ("page", ("/cases/HHG-019", "#nba", None),
          "Case nineteen shows the agent handling uncertainty. The evidence leaned toward fraud at point seven three, but under rule one that is not enough to block, "
          "so the first recommendation is to verify with the customer. After the assumed denial the probability rises to point nine five and the actions change to a block, a case and a report."),
-        ("page", ("/cases/HHG-001", "header", None),
+        ("page", ("/cases/HHG-001", "article > header", None),
          "Not every alert is fraud. Case one had a risk score of point six one, but the card uses that billing region regularly and repeats the same purchase. "
          "With independent signals on the legitimate side, the agent stops early and closes the alert without bothering the customer."),
         ("page", ("/cases/HHG-011", "#progression", None),
@@ -147,11 +149,11 @@ def capture(page, spec, raw: Path) -> None:
         loc = page.locator(selector).first
         loc.scroll_into_view_if_needed()
         if action == "click":
-            page.get_by_role("button", name="Execute Next Best Action").click()
+            page.get_by_role("button", name="Execute next best action").click()
             page.wait_for_timeout(400)
         if action == "viewport":
             page.evaluate("document.querySelector(\"ul[aria-label='Benchmark cases']\").scrollIntoView()")
-            page.evaluate("window.scrollBy(0, -90)")
+            page.evaluate("window.scrollBy(0, -120)")
             page.wait_for_timeout(300)
             page.screenshot(path=str(raw))
         else:

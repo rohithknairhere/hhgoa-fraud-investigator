@@ -4,33 +4,32 @@ import Link from "next/link";
 import { LegalPage } from "@/components/LegalPage";
 
 export const metadata: Metadata = {
-  title: "Terms and conditions",
-  description: "Terms governing use of the HHGOA Fraud Investigator demonstration.",
+  title: "Terms",
+  description: "Terms for using the HHGOA Fraud Desk demo.",
   alternates: { canonical: "/terms-and-conditions" },
 };
 
 export default function TermsPage() {
   return (
     <LegalPage
-      title="Terms and conditions"
-      updated="24 September 2026"
+      title="Terms"
+      updated="25 September 2026"
       sections={[
         {
-          heading: "Demonstration only",
+          heading: "It's a demo",
           body: (
             <p>
-              This application is a research and hackathon prototype. Its recommendations, including blocks, allows
-              and Suspicious Activity Report narratives, are generated from simulated data. They are not financial,
-              legal or compliance advice and are not filed with any authority.
+              This site is a hackathon project. The recommendations and reports on it were produced from an anonymised
+              dataset. They are not financial, legal or compliance advice, and no report here has been filed with anyone.
             </p>
           ),
         },
         {
-          heading: "Acceptable use",
+          heading: "Using the site",
           body: (
             <p>
-              Do not submit real personal data, card numbers or credentials in analyst notes. Do not attempt to
-              disrupt the service, bypass rate limits or probe it for vulnerabilities without permission.
+              Please don&apos;t enter real personal details, card numbers or passwords anywhere on the site, and don&apos;t
+              try to break or overload it.
             </p>
           ),
         },
@@ -38,8 +37,9 @@ export default function TermsPage() {
           heading: "Automated decisions",
           body: (
             <p>
-              The agent logs its uncertainty and requests more evidence when its confidence is below 0.60. In any real
-              deployment, a qualified human analyst must review decisions with a material effect on a customer.
+              The agent asks for more evidence when it isn&apos;t sure, and anything with a real effect on a customer, such
+              as blocking a card, is sent to a person for approval. In a real bank, a qualified analyst should review
+              those decisions.
             </p>
           ),
         },
@@ -47,8 +47,8 @@ export default function TermsPage() {
           heading: "No warranty",
           body: (
             <p>
-              The service is provided &quot;as is&quot;, without warranties of any kind. To the extent permitted by
-              law, the authors are not liable for losses arising from its use.
+              The site is provided as is. To the extent the law allows, the team isn&apos;t liable for anything that comes
+              from using it.
             </p>
           ),
         },
@@ -56,11 +56,11 @@ export default function TermsPage() {
           heading: "Privacy",
           body: (
             <p>
-              Our{" "}
-              <Link href="/privacy-policy" className="font-semibold text-accent underline underline-offset-4">
-                privacy policy
+              See the{" "}
+              <Link href="/privacy-policy" className="font-medium text-accent hover:underline">
+                privacy page
               </Link>{" "}
-              explains how we handle data.
+              for what the site stores.
             </p>
           ),
         },

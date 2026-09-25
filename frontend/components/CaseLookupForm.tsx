@@ -22,7 +22,7 @@ export function CaseLookupForm() {
       className="flex w-full flex-col gap-2 sm:w-auto"
     >
       <label htmlFor="caseId" className="text-sm font-semibold text-ink">
-        Jump to case
+        Go to case
       </label>
       <div className="flex gap-2">
         <input

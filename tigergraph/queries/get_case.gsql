@@ -1,9 +1,0 @@
-CREATE OR REPLACE QUERY get_case(VERTEX<FraudCase> case_id) FOR GRAPH HHGOA_IEEE {
-  SetAccum<STRING> @@txns;
-  MaxAccum<STRING> @@customer;
-  C = {case_id};
-  X = SELECT t FROM C:c -(INVESTIGATES)- Transaction:t ACCUM @@txns += t.txn_id;
-  X = SELECT u FROM C:c -(CONCERNS)- Customer:u ACCUM @@customer += u.customer_id;
-  PRINT C AS fraud_case;
-  PRINT @@txns AS transaction_ids, @@customer AS customer_id;
-}

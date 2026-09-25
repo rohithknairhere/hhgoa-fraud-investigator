@@ -18,11 +18,11 @@ export default function NotFound() {
         Page not found
       </h1>
       <p className="text-ink">
-        We couldn&apos;t find that page. Check the case ID (HHG-001 to HHG-020) or go back to the inbox.
+        We couldn&apos;t find that page. Check the case ID (HHG-001 to HHG-020) or go back to the case list.
       </p>
       <div className="flex flex-wrap justify-center gap-4">
         <Link href="/" className="neu-button focus-ring text-accent">
-          Go to case inbox
+          All cases
         </Link>
         <Link href="/cases/HHG-001" className="neu-button focus-ring">
           Open HHG-001

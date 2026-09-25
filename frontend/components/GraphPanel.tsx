@@ -98,7 +98,7 @@ export function GraphPanel({
                     y1={a.y}
                     x2={b.x}
                     y2={b.y}
-                    stroke={e.type === "SIMILAR_TO" ? "#3730a3" : e.type === "LINKED_FRAUD" ? "#9f1239" : "#64748b"}
+                    stroke={e.type === "SIMILAR_TO" ? "#00666b" : e.type === "LINKED_FRAUD" ? "#a4262c" : "#5b7f82"}
                     strokeWidth={1.5}
                     strokeDasharray={e.type === "SIMILAR_TO" ? "5 4" : undefined}
                   />
@@ -120,12 +120,12 @@ export function GraphPanel({
                     onKeyDown={(ev) => (ev.key === "Enter" || ev.key === " ") && setSelected(n)}
                     className="cursor-pointer focus:outline-none"
                   >
-                    <circle r={r + 3} fill="#a3b1c6" opacity={0.5} transform="translate(2,2)" />
+                    <circle r={r + 3} fill="#c3d2d3" opacity={0.5} transform="translate(2,2)" />
                     <circle r={r + 3} fill="#ffffff" opacity={0.9} transform="translate(-2,-2)" />
                     <circle
                       r={r}
-                      fill={n.role === "focal" ? "#3730a3" : "#e0e5ec"}
-                      stroke={n.flagged ? "#9f1239" : isSel ? "#3730a3" : "#94a3b8"}
+                      fill={n.role === "focal" ? "#00666b" : "#eaf1f1"}
+                      stroke={n.flagged ? "#a4262c" : isSel ? "#00666b" : "#9bb5b7"}
                       strokeWidth={n.flagged || isSel ? 3 : 1.5}
                       strokeDasharray={n.role === "memory" ? "4 3" : undefined}
                     />
@@ -134,12 +134,12 @@ export function GraphPanel({
                       dy="0.35em"
                       fontSize={n.role === "focal" ? 13 : 11}
                       fontWeight={700}
-                      fill={n.role === "focal" ? "#ffffff" : "#1e293b"}
+                      fill={n.role === "focal" ? "#ffffff" : "#051b1d"}
                     >
                       {TYPE_GLYPH[n.type] ?? "?"}
                     </text>
                     {n.role !== "neighbour" && (
-                      <text textAnchor="middle" y={r + 16} fontSize={11} fill="#1e293b" fontWeight={600}>
+                      <text textAnchor="middle" y={r + 16} fontSize={11} fill="#051b1d" fontWeight={600}>
                         {n.id}
                       </text>
                     )}

@@ -21,7 +21,7 @@
         ]
       },
       {
-        "claim": "$1,000.03 vs this card's 95th percentile of $125.00 for online purchases over 16 prior transactions",
+        "claim": "$1,000.03 against a 95th percentile of $125.00 across this card's 16 earlier online purchases",
         "source": "graph",
         "ref": "query:card_history(card_id=C10434-K1)",
         "entity_ids": [
@@ -29,7 +29,7 @@
         ]
       },
       {
-        "claim": "Classifier trained on the Jul-Oct closed cases (Vesta V/C/D/M features, unnamed) scores the flagged transaction 0.00; bank risk score was 0.90",
+        "claim": "A model trained on the July to October closed cases, using Vesta's unnamed V, C, D and M columns, scores this transaction 0.00. The bank's own score was 0.90",
         "source": "graph",
         "ref": "model:closed_case_memory_classifier",
         "entity_ids": [
@@ -37,7 +37,7 @@
         ]
       },
       {
-        "claim": "Retrieved closed cases: CC-0873 (cleared, none, $0.00); CC-5553 (confirmed_fraud, card_not_present_fraud, $191.94); CC-5552 (confirmed_fraud, card_not_present_fraud, $94.78); CC-5548 (confirmed_fraud, card_not_present_fraud, $150.08)",
+        "claim": "Closed cases pulled for comparison: CC-0873 (cleared, none, $0.00); CC-5553 (confirmed_fraud, card_not_present_fraud, $191.94); CC-5552 (confirmed_fraud, card_not_present_fraud, $94.78); CC-5548 (confirmed_fraud, card_not_present_fraud, $150.08)",
         "source": "graph",
         "ref": "query:similar_closed_cases",
         "entity_ids": [
@@ -82,37 +82,37 @@
       {
         "action": "ALLOW_TRANSACTION",
         "route": "auto",
-        "reason": "Policy 6: activity consistent with the card's history on two independent signals"
+        "reason": "Policy 6: two independent signals say this is the cardholder's normal activity"
       },
       {
         "action": "CLOSE_NO_FRAUD",
         "route": "auto",
-        "reason": "Policy 6: probability at or below 0.15 on two independent signals"
+        "reason": "Policy 6: fraud probability is 0.15 or lower on two independent signals"
       }
     ],
     "final": [
       {
         "action": "ALLOW_TRANSACTION",
         "route": "auto",
-        "reason": "Policy 6: activity consistent with the card's history on two independent signals"
+        "reason": "Policy 6: two independent signals say this is the cardholder's normal activity"
       },
       {
         "action": "CLOSE_NO_FRAUD",
         "route": "auto",
-        "reason": "Policy 6: probability at or below 0.15 on two independent signals"
+        "reason": "Policy 6: fraud probability is 0.15 or lower on two independent signals"
       }
     ],
     "what_changed": "nothing"
   },
   "sar": {
     "file": false,
-    "reason": "No report: verdict is not fraud.",
+    "reason": "No report: the verdict is not fraud.",
     "narrative": "",
     "subjects": [],
     "total_amount_usd": 0,
     "activity_dates": []
   },
-  "stop_reason": "Fraud probability at or beyond the policy 6 thresholds on at least two independent signals; further steps would not change the decision.",
+  "stop_reason": "The evidence already met the policy's stopping bar (0.85 or 0.15 on two independent signals). Asking the customer would not change the outcome.",
   "tool_calls": 11,
   "tokens": 5360,
   "latency_s": 28.77

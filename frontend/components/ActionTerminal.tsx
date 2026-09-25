@@ -7,8 +7,8 @@ import type { RecommendedAction } from "@/lib/types";
 
 type State = "pending" | "executed" | "awaiting";
 
-// The agent may only execute auto-route actions itself. L1 and L2 actions are sent for human
-// approval, as the fraud policy requires. Execution here is simulated.
+// Only auto-route actions can be carried out directly. L1 and L2 actions go to a person for
+// sign-off, as the fraud policy requires. Nothing here touches a real system.
 export function ActionTerminal({ actions }: { actions: RecommendedAction[] }) {
   const [state, setState] = useState<Record<number, State>>({});
   const [ran, setRan] = useState(false);
@@ -36,7 +36,7 @@ export function ActionTerminal({ actions }: { actions: RecommendedAction[] }) {
                   {i + 1}. {ACTION_META[a.action]?.label ?? a.action}
                 </p>
                 <p className="text-xs text-ink-muted">
-                  {a.route} ({ROUTE_LABEL[a.route]}) | {a.reason}
+                  {ROUTE_LABEL[a.route]} | {a.reason}
                 </p>
               </div>
               <span
@@ -44,7 +44,7 @@ export function ActionTerminal({ actions }: { actions: RecommendedAction[] }) {
                   s === "executed" ? "text-success" : s === "awaiting" ? "text-warning" : "text-ink-muted"
                 }`}
               >
-                {s === "executed" ? "Executed" : s === "awaiting" ? `Sent for ${a.route} approval` : "Pending"}
+                {s === "executed" ? "Done" : s === "awaiting" ? `Waiting on ${a.route}` : a.route}
               </span>
             </li>
           );
@@ -59,12 +59,12 @@ export function ActionTerminal({ actions }: { actions: RecommendedAction[] }) {
           ran ? "shadow-neu-inset" : "shadow-neu-lg hover:shadow-neu active:shadow-neu-inset"
         }`}
       >
-        {ran ? "Next best action executed" : "Execute Next Best Action"}
+        {ran ? "Sent" : "Execute next best action"}
       </button>
       <p className="text-xs text-ink-muted" aria-live="polite">
         {ran
-          ? `${autoCount} action(s) executed by the agent; ${actions.length - autoCount} sent to a human approver.`
-          : "Only auto-route actions run automatically. L1 and L2 actions wait for a human, per the approval policy."}
+          ? `${autoCount} carried out, ${actions.length - autoCount} sent for approval.`
+          : "Auto actions run straight away. L1 goes to a team lead and L2 to a fraud manager."}
       </p>
     </div>
   );

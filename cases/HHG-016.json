@@ -23,7 +23,7 @@
         ]
       },
       {
-        "claim": "$59.67 vs this card's 95th percentile of $83.68 for online purchases over 48 prior transactions",
+        "claim": "$59.67 against a 95th percentile of $83.68 across this card's 48 earlier online purchases",
         "source": "graph",
         "ref": "query:card_history(card_id=C09988-K1)",
         "entity_ids": [
@@ -31,7 +31,7 @@
         ]
       },
       {
-        "claim": "Classifier trained on the Jul-Oct closed cases (Vesta V/C/D/M features, unnamed) scores the flagged transaction 0.39; bank risk score was 0.37",
+        "claim": "A model trained on the July to October closed cases, using Vesta's unnamed V, C, D and M columns, scores this transaction 0.39. The bank's own score was 0.37",
         "source": "graph",
         "ref": "model:closed_case_memory_classifier",
         "entity_ids": [
@@ -39,7 +39,7 @@
         ]
       },
       {
-        "claim": "Retrieved closed cases: CC-5553 (confirmed_fraud, card_not_present_fraud, $191.94); CC-5552 (confirmed_fraud, card_not_present_fraud, $94.78); CC-5548 (confirmed_fraud, card_not_present_fraud, $150.08); CC-5564 (confirmed_fraud, card_not_present_new_device, $16.69)",
+        "claim": "Closed cases pulled for comparison: CC-5553 (confirmed_fraud, card_not_present_fraud, $191.94); CC-5552 (confirmed_fraud, card_not_present_fraud, $94.78); CC-5548 (confirmed_fraud, card_not_present_fraud, $150.08); CC-5564 (confirmed_fraud, card_not_present_new_device, $16.69)",
         "source": "graph",
         "ref": "query:similar_closed_cases",
         "entity_ids": [
@@ -50,7 +50,7 @@
         ]
       },
       {
-        "claim": "Customer repeats that they did not make the purchase and still holds the card",
+        "claim": "The customer repeats that they did not make the purchase and still has the card.",
         "source": "customer",
         "ref": "evidence_request:1",
         "entity_ids": []
@@ -80,7 +80,7 @@
       "CC-5548",
       "CC-5564"
     ],
-    "summary": "Case HHG-016 was opened on 2016-12-12 after customer C09988 reported transaction 3534820 for $59.67 as unauthorized. The transaction was an online purchase from a Windows device using Edge 16.0, which was identified as a new device for this card. Although the amount was consistent with the cardholder's 95th percentile for online spending, the customer confirmed they did not make the purchase. Under policy R2, the card was blocked and the case was closed as fraud. No regulatory report is recommended because the exposure is under $1,000 and there is no evidence of a shared device profile.",
+    "summary": "Case HHG-016 was opened on 2016-12-12 after customer C09988 reported transaction 3534820 for $59.67 as unauthorized. The transaction was an online purchase from a Windows device using Edge 16.0, which was identified as a new device for this card. Although the amount was consistent with the cardholder's 95th percentile for online spending, the customer confirmed they did not make the purchase. Under policy R2 the case is closed as fraud and blocking the card is recommended, pending team lead approval. No regulatory report is recommended because the exposure is under $1,000 and there is no evidence of a shared device profile.",
     "written_to_graph": true,
     "graph_case_id": "INV-HHG-016"
   },
@@ -88,7 +88,7 @@
     {
       "type": "customer_validation",
       "asked_after_step": 4,
-      "assumed_response": "Customer repeats that they did not make the purchase and still holds the card"
+      "assumed_response": "The customer repeats that they did not make the purchase and still has the card."
     }
   ],
   "next_best_actions": {
@@ -96,42 +96,42 @@
       {
         "action": "CREATE_CASE",
         "route": "auto",
-        "reason": "3a: a case is opened whenever evidence is requested"
+        "reason": "3a: a case is opened whenever we ask for evidence"
       },
       {
         "action": "VERIFY_WITH_CUSTOMER",
         "route": "auto",
-        "reason": "R1: probability 0.66 rests on weak or single signals; verify before any block"
+        "reason": "R1: at 0.66 the case rests on weak signals, so check with the customer before blocking"
       },
       {
         "action": "MONITOR_CARD",
         "route": "auto",
-        "reason": "Raise monitoring while verification is pending"
+        "reason": "Watch the card closely while we wait for the reply"
       }
     ],
     "final": [
       {
         "action": "BLOCK_CARD",
         "route": "L1",
-        "reason": "R2: customer denied; exposure $59.67 at or under $2,500"
+        "reason": "R2: the customer denied it, and $59.67 is within the $2,500 team lead limit"
       },
       {
         "action": "CREATE_CASE",
         "route": "auto",
-        "reason": "R2/3a"
+        "reason": "R2 and 3a: record the confirmed fraud"
       }
     ],
-    "what_changed": "Assumed response (Customer repeats that they did not make the purchase and still holds the card) moved fraud probability from 0.66 to 0.91, so the recommendation changed from verification to the actions the policy requires."
+    "what_changed": "The customer's reply moved the fraud probability from 0.66 to 0.91, so blocking the card is recommended and the fraud recorded."
   },
   "sar": {
     "file": false,
-    "reason": "No report: exposure is under $1,000 with no shared device, region cluster or coordinated pattern (3a).",
+    "reason": "No report: under $1,000 is involved and nothing links this card to a shared device, region or coordinated pattern (3a).",
     "narrative": "",
     "subjects": [],
     "total_amount_usd": 0,
     "activity_dates": []
   },
-  "stop_reason": "The verification response settled the question (policy 6).",
+  "stop_reason": "The customer's answer settled it (policy 6).",
   "tool_calls": 12,
   "tokens": 4719,
   "latency_s": 25.72

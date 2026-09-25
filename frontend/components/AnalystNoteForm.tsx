@@ -7,7 +7,7 @@ import { useForm } from "react-hook-form";
 import { analystNoteSchema, type AnalystNoteInput } from "@/lib/schemas";
 
 const DISPOSITIONS: { value: AnalystNoteInput["disposition"]; label: string }[] = [
-  { value: "agree", label: "Agree with agent" },
+  { value: "agree", label: "Agree" },
   { value: "disagree", label: "Disagree" },
   { value: "needs_more_info", label: "Needs more info" },
 ];
@@ -38,7 +38,7 @@ export function AnalystNoteForm({ caseId }: { caseId: string }) {
       reset();
       setResult({
         ok: true,
-        message: body.stored === false ? "Note validated. This demo does not store notes." : "Note recorded on the case.",
+        message: body.stored === false ? "Thanks. This demo checks the note but does not store it." : "Saved to the case.",
       });
     } catch (err) {
       setResult({ ok: false, message: err instanceof Error ? err.message : "Could not save note" });
@@ -48,7 +48,7 @@ export function AnalystNoteForm({ caseId }: { caseId: string }) {
   return (
     <form onSubmit={handleSubmit(onSubmit)} noValidate className="space-y-4" aria-describedby="note-help">
       <p id="note-help" className="text-sm text-ink-muted">
-        Record your review of the agent&apos;s decision. Notes are attached to the case audit trail.
+        Agree or disagree with the call and say why. Notes go on the case record.
       </p>
       <div>
         <label htmlFor="author" className="mb-1 block text-sm font-semibold text-ink">
@@ -69,11 +69,11 @@ export function AnalystNoteForm({ caseId }: { caseId: string }) {
         )}
       </div>
       <fieldset>
-        <legend className="mb-2 text-sm font-semibold text-ink">Disposition</legend>
+        <legend className="mb-2 text-sm font-semibold text-ink">Your view</legend>
         <div className="flex flex-wrap gap-3">
           {DISPOSITIONS.map((d) => (
             <label key={d.value} className="neu-sm flex cursor-pointer items-center gap-2 px-4 py-2 text-sm text-ink has-[:checked]:shadow-neu-inset">
-              <input type="radio" value={d.value} className="accent-[#3730a3]" {...register("disposition")} />
+              <input type="radio" value={d.value} className="accent-[#00666b]" {...register("disposition")} />
               {d.label}
             </label>
           ))}
@@ -103,7 +103,7 @@ export function AnalystNoteForm({ caseId }: { caseId: string }) {
         )}
       </div>
       <button type="submit" disabled={isSubmitting} className="neu-button focus-ring">
-        {isSubmitting ? "Saving..." : "Save analyst note"}
+        {isSubmitting ? "Saving..." : "Save note"}
       </button>
       <div aria-live="polite">
         {result && (

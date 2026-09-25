@@ -24,7 +24,7 @@ export function LegalPage({
       ))}
       <p className="pt-4 text-sm">
         <Link href="/" className="focus-ring rounded font-semibold text-accent underline underline-offset-4">
-          Return to the case inbox
+          Back to cases
         </Link>
       </p>
     </article>

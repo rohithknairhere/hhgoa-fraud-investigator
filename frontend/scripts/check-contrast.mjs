@@ -26,7 +26,7 @@ for (const [fg, bg] of tokens.contrastPairs) {
   console.log(`${ok ? "PASS" : "FAIL"}  ${fg.padEnd(10)} on ${bg.padEnd(12)} ${ratio.toFixed(2)}:1 (AA min 4.5)`);
 }
 
-// Heuristic: light Tailwind grays (400 and below) fail AA on #e0e5ec, so forbid them for text.
+// Heuristic: light Tailwind grays (400 and below) fail AA on #eaf1f1, so forbid them for text.
 const banned = /\btext-(?:gray|slate|zinc|neutral|stone)-(?:50|100|200|300|400)\b/;
 function walk(dir) {
   for (const name of readdirSync(dir)) {
@@ -45,7 +45,7 @@ function walk(dir) {
 for (const d of ["app", "components"]) walk(path.join(root, d));
 
 // Inline hex colours used for text in SVG must also pass on the surface colour.
-for (const hex of ["#1e293b", "#3730a3", "#9f1239", "#334155"]) {
+for (const hex of ["#051b1d", "#00666b", "#a4262c", "#003339"]) {
   const ratio = contrast(hex, tokens.colors.surface);
   if (ratio < 4.5) {
     failed++;

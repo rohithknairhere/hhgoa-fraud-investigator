@@ -21,7 +21,7 @@
         ]
       },
       {
-        "claim": "$128.33 vs this card's 95th percentile of $96.39 for online purchases over 208 prior transactions",
+        "claim": "$128.33 against a 95th percentile of $96.39 across this card's 208 earlier online purchases",
         "source": "graph",
         "ref": "query:card_history(card_id=C08106-K1)",
         "entity_ids": [
@@ -29,7 +29,7 @@
         ]
       },
       {
-        "claim": "Classifier trained on the Jul-Oct closed cases (Vesta V/C/D/M features, unnamed) scores the flagged transaction 0.01; bank risk score was 0.34",
+        "claim": "A model trained on the July to October closed cases, using Vesta's unnamed V, C, D and M columns, scores this transaction 0.01. The bank's own score was 0.34",
         "source": "graph",
         "ref": "model:closed_case_memory_classifier",
         "entity_ids": [
@@ -37,7 +37,7 @@
         ]
       },
       {
-        "claim": "Retrieved closed cases: CC-0696 (cleared, none, $0.00); CC-3778 (confirmed_fraud, card_not_present_fraud, $58.42); CC-2121 (confirmed_fraud, card_not_present_fraud, $102.68)",
+        "claim": "Closed cases pulled for comparison: CC-0696 (cleared, none, $0.00); CC-3778 (confirmed_fraud, card_not_present_fraud, $58.42); CC-2121 (confirmed_fraud, card_not_present_fraud, $102.68)",
         "source": "graph",
         "ref": "query:similar_closed_cases",
         "entity_ids": [
@@ -47,7 +47,7 @@
         ]
       },
       {
-        "claim": "Customer confirms the purchase (assumed: activity matches the card's own history)",
+        "claim": "The customer confirms the purchase. We assumed this because it fits the card's own history.",
         "source": "customer",
         "ref": "evidence_request:1",
         "entity_ids": []
@@ -84,7 +84,7 @@
     {
       "type": "customer_validation",
       "asked_after_step": 4,
-      "assumed_response": "Customer confirms the purchase (assumed: activity matches the card's own history)"
+      "assumed_response": "The customer confirms the purchase. We assumed this because it fits the card's own history."
     }
   ],
   "next_best_actions": {
@@ -92,42 +92,42 @@
       {
         "action": "CREATE_CASE",
         "route": "auto",
-        "reason": "3a: a case is opened whenever evidence is requested"
+        "reason": "3a: a case is opened whenever we ask for evidence"
       },
       {
         "action": "VERIFY_WITH_CUSTOMER",
         "route": "auto",
-        "reason": "R1: probability 0.06 rests on weak or single signals; verify before any block"
+        "reason": "R1: at 0.06 the case rests on weak signals, so check with the customer before blocking"
       }
     ],
     "final": [
       {
         "action": "CREATE_CASE",
         "route": "auto",
-        "reason": "3a: case opened for the verification, closed as legitimate"
+        "reason": "3a: the case opened for the check is closed as legitimate"
       },
       {
         "action": "ALLOW_TRANSACTION",
         "route": "auto",
-        "reason": "R3: customer confirmed the activity"
+        "reason": "R3: the customer confirmed it"
       },
       {
         "action": "CLOSE_NO_FRAUD",
         "route": "auto",
-        "reason": "R3"
+        "reason": "R3: confirmed by the customer"
       }
     ],
-    "what_changed": "Assumed response (Customer confirms the purchase) left fraud probability at 0.06; with the verification step resolved, the recommendation moved from verification to the actions the policy requires."
+    "what_changed": "The customer's reply matched what the graph already showed (fraud probability 0.06), so the alert is closed as legitimate."
   },
   "sar": {
     "file": false,
-    "reason": "No report: verdict is not fraud.",
+    "reason": "No report: the verdict is not fraud.",
     "narrative": "",
     "subjects": [],
     "total_amount_usd": 0,
     "activity_dates": []
   },
-  "stop_reason": "The verification response settled the question (policy 6).",
+  "stop_reason": "The customer's answer settled it (policy 6).",
   "tool_calls": 10,
   "tokens": 4025,
   "latency_s": 23.74

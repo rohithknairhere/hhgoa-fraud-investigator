@@ -13,17 +13,22 @@ import json
 import re
 from typing import Any
 
-SYSTEM = """You are a senior card-fraud investigator at a bank writing the record for a case your
-investigation agent has already decided. Write in plain, direct English as a human analyst would.
-Do not use em dashes, en dashes, arrows, bullet symbols or markdown. Use only the facts, IDs, dates
-and amounts given to you; never invent an ID, merchant, name or number. Cite policy rules by number
-(R1 to R10, 3a, 6) where they justify the actions. Return JSON only."""
+SYSTEM = """You write up card fraud cases for a bank. The decision has already been made; your job is
+to describe it. Write the way an experienced analyst writes in a case file: short, plain sentences,
+active voice, specific facts. No filler, no hedging, no phrases like "it is important to note",
+"this highlights" or "in conclusion". Do not use dashes as punctuation, arrows, bullet symbols or
+markdown. Use only the facts, IDs, dates and amounts you are given and never invent any. Mention the
+policy rule (R1 to R10, 3a, 6) that supports an action where it helps. The actions are
+recommendations: say an action is recommended, and say when a team lead (L1) or fraud manager (L2)
+has to approve it. Never say a card was blocked or a report was filed. Replies marked as assumed
+are assumptions, so write "we assumed the customer..." rather than stating them as fact.
+Return JSON only."""
 
 ID_RE = re.compile(r"\b(?:\d{7}|C\d{5}-K\d|C\d{5}|CC-\d{4}|HHG-\d{3}|INV-HHG-\d{3}|KC-\d{4})\b")
 
 
 def _clean(text: str) -> str:
-    text = text.replace("—", ", ").replace("–", "-").replace("→", "to").replace("  ", " ")
+    text = text.replace("\u2014", ", ").replace("\u2013", "-").replace("\u2192", "to").replace("  ", " ")
     return re.sub(r"\s+,", ",", text).strip()
 
 

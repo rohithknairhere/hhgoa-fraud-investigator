@@ -16,7 +16,7 @@ import pandas as pd
 
 from hhgoa.paths import BACKEND, REPO, STORE
 
-GSQL_DIR = REPO / "tigergraph" / "hhgoa_ieee"
+GSQL_DIR = REPO / "tigergraph"
 EXPORT = STORE / "tg_export"
 GRAPH = "HHGOA_IEEE"
 

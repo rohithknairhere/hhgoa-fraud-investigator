@@ -13,7 +13,6 @@ import json
 import math
 import re
 import time
-from dataclasses import dataclass, field
 from typing import Any, TypedDict
 
 import pandas as pd
@@ -25,9 +24,7 @@ H = pd.Timedelta(hours=1)
 D = pd.Timedelta(days=1)
 
 
-# ---------------------------------------------------------------------------------------------
 # Graph mirror + named queries
-# ---------------------------------------------------------------------------------------------
 class GraphMirror:
     def __init__(self) -> None:
         tx = pd.read_parquet(STORE / "transactions.parquet")
@@ -48,7 +45,7 @@ class GraphMirror:
         self.cases = pd.read_parquet(STORE / "case_pack.parquet")
         self.calls = 0
 
-    # each method = one graph query (counted as a tool call)
+    # Each method is one graph query and counts as one tool call.
     def get_transaction(self, txn_id: int) -> pd.Series:
         self.calls += 1
         return self.tx.loc[txn_id]
@@ -101,9 +98,7 @@ class GraphMirror:
         return []
 
 
-# ---------------------------------------------------------------------------------------------
 # Policy helpers
-# ---------------------------------------------------------------------------------------------
 def route(action: str, exposure: float) -> str:
     if action == "DECLINE_TRANSACTION":
         return "L1"
@@ -135,9 +130,7 @@ def tid(x) -> str:
     return str(int(x))
 
 
-# ---------------------------------------------------------------------------------------------
 # LangGraph state and nodes
-# ---------------------------------------------------------------------------------------------
 class S(TypedDict, total=False):
     case: dict
     f: Any
@@ -160,12 +153,6 @@ class S(TypedDict, total=False):
     trace: list
 
 
-@dataclass
-class Ctx:
-    g: GraphMirror
-    trace: list = field(default_factory=list)
-
-
 G: GraphMirror | None = None
 
 
@@ -185,7 +172,7 @@ def investigate(s: S) -> S:
     fnd: dict[str, Any] = {"hist_n": len(hist)}
     q = lambda name, **kw: f"query:{name}(" + ", ".join(f"{k}={v}" for k, v in kw.items()) + ")"  # noqa: E731
 
-    # --- pattern: just-under-$500 online burst (undocumented, seen in CC-3748 family)
+    # pattern: just-under-$500 online burst (undocumented, seen in CC-3748 family)
     burst = win[(win.channel == "online") & (win.TransactionAmt >= 400) & (win.TransactionAmt < 500)
                 & (abs(win.ts - f.ts) <= H)]
     if len(burst) >= 3 and f.TransactionID in set(burst.TransactionID):
@@ -195,7 +182,7 @@ def investigate(s: S) -> S:
                             "authorization threshold", "source": "graph",
                    "ref": q("card_window", card_id=card, hours=2), "entity_ids": [tid(x) for x in burst.TransactionID]})
 
-    # --- pattern: card testing (>=3 tiny online auths within 1h, then larger purchase)
+    # pattern: card testing (>=3 tiny online auths within 1h, then larger purchase)
     small = win[(win.channel == "online") & (win.TransactionAmt < 5) & (win.ts <= f.ts)]
     tests = []
     for _, r in small.iterrows():
@@ -209,7 +196,7 @@ def investigate(s: S) -> S:
                             f"{money(f.TransactionAmt)} flagged purchase", "source": "graph",
                    "ref": q("card_window", card_id=card, hours=48), "entity_ids": [tid(x) for x in tests.TransactionID] + [tid(f.TransactionID)]})
 
-    # --- device profile and shared-origin ring
+    # device profile and shared-origin ring
     prof = f.device_profile if isinstance(f.device_profile, str) else ""
     fnd["profile"] = prof
     if prof:
@@ -227,7 +214,7 @@ def investigate(s: S) -> S:
         prior = [x for x in G.prior_investigations(prof) if x["case_id"] != f"INV-{c['case_id']}"]
         fnd["prior_fraud_investigations"] = [x for x in prior if x.get("verdict") == "fraud"]
         if prior:
-            ev.append({"claim": "Case memory: this device profile already appears in our earlier investigation(s) "
+            ev.append({"claim": "This device already appears in our earlier case(s) "
                                 + ", ".join(f"{x['case_id']} ({x.get('verdict')}, {x.get('pattern')})" for x in prior),
                        "source": "graph", "ref": q("investigations_for_device", profile=prof.split(' | ')[0]),
                        "entity_ids": [x["case_id"] for x in prior]})
@@ -239,16 +226,16 @@ def investigate(s: S) -> S:
                        "source": "graph", "ref": q("card_history", card_id=card),
                        "entity_ids": [tid(f.TransactionID)]})
 
-    # --- amount and product fit
+    # amount and product fit
     same_ch = hist[hist.channel == f.channel]
     p95 = same_ch.TransactionAmt.quantile(0.95) if len(same_ch) >= 10 else None
     fnd["amount_anomaly"] = bool(p95 is not None and f.TransactionAmt > max(p95 * 1.5, 150))
     if p95 is not None:
-        ev.append({"claim": f"{money(f.TransactionAmt)} vs this card's 95th percentile of {money(p95)} for "
-                            f"{f.channel} purchases over {len(same_ch)} prior transactions", "source": "graph",
+        ev.append({"claim": f"{money(f.TransactionAmt)} against a 95th percentile of {money(p95)} across this card's "
+                            f"{len(same_ch)} earlier {f.channel.replace('_', '-')} purchases", "source": "graph",
                    "ref": q("card_history", card_id=card), "entity_ids": [tid(f.TransactionID)]})
 
-    # --- recurring charge (same product, ~same amount, repeated before)
+    # recurring charge (same product, ~same amount, repeated before)
     rec = hist[(hist.ProductCD == f.ProductCD) & (abs(hist.TransactionAmt - f.TransactionAmt) <= max(1.0, 0.02 * f.TransactionAmt))
                & (hist.ts < f.ts - 2 * D)]
     low_risk = pd.isna(f.memory_score) or f.memory_score < 0.3
@@ -258,7 +245,7 @@ def investigate(s: S) -> S:
                             f"(e.g. {', '.join(str(d.date()) for d in rec.ts.tail(4))}), consistent with the cardholder's own habit",
                    "source": "graph", "ref": q("card_history", card_id=card), "entity_ids": [tid(x) for x in rec.TransactionID.tail(4)]})
 
-    # --- region
+    # region
     if f.channel == "in_person" and pd.notna(f.addr1):
         regions = hist[hist.ts >= f.ts - 90 * D].addr1.value_counts()
         known = int(regions.get(f.addr1, 0))
@@ -269,12 +256,12 @@ def investigate(s: S) -> S:
                    "entity_ids": [tid(f.TransactionID)]})
         fnd["out_of_region"] = known == 0 and len(same_region) <= 2
 
-    # --- learned signal from closed-case memory (Vesta features)
+    # learned signal from closed-case memory (Vesta features)
     ms = f.memory_score
     fnd["memory_score"] = None if pd.isna(ms) else float(ms)
     if fnd["memory_score"] is not None:
-        ev.append({"claim": f"Classifier trained on the Jul-Oct closed cases (Vesta V/C/D/M features, unnamed) scores "
-                            f"the flagged transaction {ms:.2f}; bank risk score was {f.risk_score:.2f}",
+        ev.append({"claim": f"A model trained on the July to October closed cases, using Vesta's unnamed V, C, D and M columns, "
+                            f"scores this transaction {ms:.2f}. The bank's own score was {f.risk_score:.2f}",
                    "source": "graph", "ref": "model:closed_case_memory_classifier", "entity_ids": [tid(f.TransactionID)]})
     return {"findings": fnd, "evidence": ev, "trace": s["trace"] + ["investigate"]}
 
@@ -353,7 +340,7 @@ def assess(s: S) -> S:
     similar = G.similar_closed_cases(card, pattern if p >= 0.5 else "none", fnd.get("profile", ""), pd.Timestamp(c["opened_at"]), hint)
     if similar:
         info = G.closed_info(similar)
-        s["evidence"].append({"claim": "Retrieved closed cases: " + "; ".join(
+        s["evidence"].append({"claim": "Closed cases pulled for comparison: " + "; ".join(
             f"{r['case_id']} ({r['outcome']}, {r['pattern']}, {money(float(r['exposure_usd'] or 0))})" for r in info),
             "source": "graph", "ref": "query:similar_closed_cases", "entity_ids": similar})
     return {"p_initial": p, "pattern": pattern, "affected": aff, "connected_cards": conn_cards,
@@ -367,40 +354,40 @@ def nba_initial(s: S) -> S:
     initial: list[dict] = []
     req: list[dict] = []
     if s["pattern"] == "undocumented" and p >= 0.85:
-        initial = [act("CREATE_CASE", "R9/3a: coordinated undocumented abuse, case opened with evidence", exposure),
-                   act("DECLINE_TRANSACTION", "R9: stop further authorizations while the pattern is reviewed", exposure),
-                   act("VERIFY_WITH_CUSTOMER", "R1: confirm with the cardholder before blocking", exposure)]
+        initial = [act("CREATE_CASE", "3a and R9: open a case for a coordinated pattern", exposure),
+                   act("DECLINE_TRANSACTION", "R9: stop further charges while the pattern is reviewed", exposure),
+                   act("VERIFY_WITH_CUSTOMER", "R1: check with the cardholder before blocking", exposure)]
         if s["connected_cards"]:
-            initial.append(act("MONITOR_CONNECTED_CARDS", "R6: other cards share the device profile", exposure))
+            initial.append(act("MONITOR_CONNECTED_CARDS", "R6: other cards used the same device", exposure))
         req = [{"type": "customer_validation", "asked_after_step": 4,
-                "assumed_response": "Cardholder states they did not make these purchases and still holds the card "
-                                    "(assumed: pattern matches confirmed closed cases of the same type)"}]
+                "assumed_response": "The cardholder says they did not make these purchases and still has the card. "
+                                    "We assumed this because the closed cases with the same pattern were all confirmed fraud."}]
     elif s["pattern"] == "card_testing" and p >= 0.7:
-        initial = [act("DECLINE_TRANSACTION", "R5: testing sequence observed", exposure),
-                   act("STEP_UP_AUTH", "R5", exposure), act("CREATE_CASE", "3a: probability above 0.30", exposure)]
+        initial = [act("DECLINE_TRANSACTION", "R5: small test charges followed by a larger one", exposure),
+                   act("STEP_UP_AUTH", "R5: make sure it is really the cardholder", exposure), act("CREATE_CASE", "3a: fraud probability is above 0.30", exposure)]
         req = [{"type": "step_up_auth", "asked_after_step": 4,
-                "assumed_response": "Step-up passcode not completed; cardholder denies the small authorizations"}]
+                "assumed_response": "The passcode was never entered, and the cardholder denies the small charges."}]
     elif report and fnd.get("recurring"):
-        initial = [act("CREATE_CASE", "R7/3a: customer dispute", 0), act("VERIFY_WITH_CUSTOMER", "R7: charge matches the cardholder's own repeated pattern", 0),
-                   act("WARN_CUSTOMER", "R7: remind the customer of the recurring charge", 0)]
+        initial = [act("CREATE_CASE", "R7 and 3a: the customer disputes the charge", 0), act("VERIFY_WITH_CUSTOMER", "R7: the charge matches the customer's own repeat purchases", 0),
+                   act("WARN_CUSTOMER", "R7: remind the customer about the recurring charge", 0)]
         req = [{"type": "customer_validation", "asked_after_step": 4,
-                "assumed_response": "After being shown the earlier identical charges, the customer recognises the recurring purchase"}]
+                "assumed_response": "Shown the earlier identical charges, the customer recognises it as their own recurring purchase."}]
     elif (p >= 0.85 or p <= 0.15) and not report:
         pass  # decisive on two independent signals: act directly (policy 6)
     else:
-        initial = [act("CREATE_CASE", "3a: a case is opened whenever evidence is requested", exposure)]
-        initial.append(act("VERIFY_WITH_CUSTOMER", f"R1: probability {p:.2f} rests on weak or single signals; verify before any block", exposure))
+        initial = [act("CREATE_CASE", "3a: a case is opened whenever we ask for evidence", exposure)]
+        initial.append(act("VERIFY_WITH_CUSTOMER", f"R1: at {p:.2f} the case rests on weak signals, so check with the customer before blocking", exposure))
         if p >= 0.3:
-            initial.append(act("MONITOR_CARD", "Raise monitoring while verification is pending", exposure))
+            initial.append(act("MONITOR_CARD", "Watch the card closely while we wait for the reply", exposure))
         if p >= 0.6:
-            resp = "Customer denies the transaction and still holds the card (assumed: device/amount anomalies and closed-case memory point to fraud)"
+            resp = "The customer denies the transaction and still has the card. We assumed a denial because the device, the amount and the closed cases all point to fraud."
         elif p <= 0.35:
-            resp = "Customer confirms the purchase (assumed: activity matches the card's own history)"
+            resp = "The customer confirms the purchase. We assumed this because it fits the card's own history."
         else:
-            resp = "No reply within 24 hours (assumed: evidence is balanced, so no answer is presumed either way)"
+            resp = "No reply within 24 hours. The evidence is evenly split, so we did not assume an answer either way."
         if report and p > 0.35:
-            resp = ("Customer repeats that they did not make the purchase and still holds the card"
-                    if p >= 0.5 else "Customer cannot provide further detail; no confirmation either way within 24 hours")
+            resp = ("The customer repeats that they did not make the purchase and still has the card."
+                    if p >= 0.5 else "The customer can't add anything useful, and there is no confirmation either way within 24 hours.")
         req = [{"type": "customer_validation", "asked_after_step": 4, "assumed_response": resp}]
     return {"initial": initial, "requests": req, "exposure0": exposure, "trace": s["trace"] + ["nba_initial"]}
 
@@ -430,53 +417,61 @@ def gather_and_final(s: S) -> S:
     if pf >= 0.85:
         verdict, status = "fraud", "closed_fraud"
         if s["pattern"] == "card_testing":
-            final.append(act("DECLINE_TRANSACTION", "R5", exposure))
+            final.append(act("DECLINE_TRANSACTION", "R5: decline the pending charge", exposure))
             final.append(act("BLOCK_CARD" if aff.TransactionAmt.max() > 100 else "STEP_UP_AUTH",
                              "R5: purchase over $100 already cleared" if aff.TransactionAmt.max() > 100 else "R5", exposure))
         else:
-            final.append(act("BLOCK_CARD", f"R2: customer denied; exposure {money(exposure)} {'≤' if exposure <= 2500 else '>'} $2,500".replace("≤", "at or under").replace(">", "over"), exposure))
-        final.append(act("CREATE_CASE", "R2/3a", exposure))
+            final.append(act("BLOCK_CARD", f"R2: the customer denied it, and {money(exposure)} is {'within' if exposure <= 2500 else 'over'} the $2,500 team lead limit", exposure))
+        final.append(act("CREATE_CASE", "R2 and 3a: record the confirmed fraud", exposure))
         if exposure > 1000 or shared or s["pattern"] == "undocumented":
-            why = "R9: undocumented coordinated pattern" if s["pattern"] == "undocumented" else (
-                "R6: shared device profile links other cards" if shared else "R2: exposure exceeds $1,000")
+            why = "R9: a coordinated pattern outside the documented list" if s["pattern"] == "undocumented" else (
+                "R6: the same device links this card to others with fraud" if shared else "R2: more than $1,000 is involved")
             final.append(act("FILE_REPORT", why, exposure))
         if shared:
-            final.append(act("MONITOR_CONNECTED_CARDS", "R6: cards sharing the device profile", exposure))
+            final.append(act("MONITOR_CONNECTED_CARDS", "R6: watch every card that used the same device", exposure))
         if s["pattern"] == "undocumented":
-            final.append(act("ESCALATE_TO_ANALYST", "R9: pattern fits no documented typology", exposure))
+            final.append(act("ESCALATE_TO_ANALYST", "R9: an analyst should review a pattern the bank hasn't documented", exposure))
     elif pf <= 0.15:
         verdict, status = "legitimate", "closed_legitimate"
         if s["initial"]:
-            final.append(act("CREATE_CASE", "3a: case opened for the verification, closed as legitimate", 0))
+            final.append(act("CREATE_CASE", "3a: the case opened for the check is closed as legitimate", 0))
         if c["trigger_type"] == "customer_report" and "recognises" in resp:
-            final.append(act("WARN_CUSTOMER", "R7: recurring charge reminder", 0))
-        final += [act("ALLOW_TRANSACTION", "R3: customer confirmed the activity" if confirmed else "Policy 6: activity consistent with the card's history on two independent signals", 0),
-                  act("CLOSE_NO_FRAUD", "R3" if confirmed else "Policy 6: probability at or below 0.15 on two independent signals", 0)]
+            final.append(act("WARN_CUSTOMER", "R7: remind the customer about the recurring charge", 0))
+        final += [act("ALLOW_TRANSACTION", "R3: the customer confirmed it" if confirmed else "Policy 6: two independent signals say this is the cardholder's normal activity", 0),
+                  act("CLOSE_NO_FRAUD", "R3: confirmed by the customer" if confirmed else "Policy 6: fraud probability is 0.15 or lower on two independent signals", 0)]
     else:
         verdict = "uncertain"
-        final = [act("CREATE_CASE", "3a", exposure), act("MONITOR_CARD", "R4: no reply within 24 hours", exposure),
-                 act("DECLINE_TRANSACTION", "R4: decline pending authorizations", exposure)]
+        final = [act("CREATE_CASE", "3a: keep the case open while it is unresolved", exposure), act("MONITOR_CARD", "R4: no reply within 24 hours, so watch the card", exposure),
+                 act("DECLINE_TRANSACTION", "R4: hold back any pending authorizations", exposure)]
         esc = exposure > 500 or c["trigger_type"] == "customer_report"
         if esc:
-            final.append(act("ESCALATE_TO_ANALYST", "R8: uncertain verdict with exposure or conflicting evidence", exposure))
+            final.append(act("ESCALATE_TO_ANALYST", "R8: the evidence conflicts, so a person should decide", exposure))
         status = "escalated" if esc else "open"
     if not s["initial"]:
         what = "nothing"
     elif [a["action"] for a in final] == [a["action"] for a in s["initial"]]:
         what = "nothing"
     else:
-        r0 = resp.split('(')[0].strip().rstrip('.')
-        what = (f"Assumed response ({r0}) moved fraud probability from {p:.2f} to {pf:.2f}, so the recommendation changed from verification to the actions the policy requires."
-                if abs(pf - p) >= 0.01 else
-                f"Assumed response ({r0}) left fraud probability at {pf:.2f}; with the verification step resolved, the recommendation moved from verification to the actions the policy requires.")
+        outcome = {"fraud": "so blocking the card is recommended and the fraud recorded",
+                   "legitimate": "so the alert is closed as legitimate",
+                   "uncertain": "so the card is watched and an analyst takes over"}[verdict]
+        if no_reply:
+            what = f"No reply came back, so the fraud probability stays at {pf:.2f} and the card is watched while an analyst takes over."
+        elif abs(pf - p) >= 0.01:
+            what = f"The customer's reply moved the fraud probability from {p:.2f} to {pf:.2f}, {outcome}."
+        else:
+            what = f"The customer's reply matched what the graph already showed (fraud probability {pf:.2f}), {outcome}."
     if not req:
         final_actions = final
         initial = final
     else:
         final_actions, initial = final, s["initial"]
-    stop = ("Fraud probability at or beyond the policy 6 thresholds on at least two independent signals; further steps would not change the decision."
-            if not req else ("The verification response settled the question (policy 6)." if (denied or confirmed)
-                             else "No reply received; further automated steps are unlikely to change the decision, so the case is handed to monitoring/analyst (policy 6)."))
+    if not req:
+        stop = "The evidence already met the policy's stopping bar (0.85 or 0.15 on two independent signals). Asking the customer would not change the outcome."
+    elif denied or confirmed:
+        stop = "The customer's answer settled it (policy 6)."
+    else:
+        stop = "No reply, and nothing else we can check automatically would change the call, so an analyst takes it from here (policy 6)."
     return {"p_final": pf, "final": final_actions, "initial": initial, "verdict": verdict, "status": status,
             "affected_final": aff, "exposure": exposure, "what_changed": what, "stop_reason": stop,
             "trace": s["trace"] + ["gather_more_evidence", "nba_final"]}
@@ -492,9 +487,7 @@ def build_graph():
     return g.compile()
 
 
-# ---------------------------------------------------------------------------------------------
 # Answer file
-# ---------------------------------------------------------------------------------------------
 PATTERN_TEXT = {
     "burst500": ("Repeated online purchases priced just under $500 in a sub-hour burst, from devices new to the account, "
                  "one behind a transparent proxy. The amounts appear chosen to stay under a $500 authorization threshold. "
